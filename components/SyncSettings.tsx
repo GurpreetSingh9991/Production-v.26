@@ -224,7 +224,7 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
                 <SettingRow 
                   icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>} 
                   label="Import Trades (CSV)" 
-                  description="IMPORT FROM TRADEZELLA, THINKORSWIM, OR ANY CSV"
+                  description="SUPPORT FOR MT5, IBKR, THINKORSWIM, & TRADEZELLA"
                   onClick={() => {
                     if (userPlan === 'pro') {
                       fileInputRef.current?.click();

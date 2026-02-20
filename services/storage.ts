@@ -64,26 +64,34 @@ export const exportToCSV = (trades: Trade[]) => {
 };
 
 const COLUMN_ALIASES: Record<string, string> = {
-  'date': 'date', 'time': 'date', 'trade date': 'date', 'close date': 'date', 'open date': 'date',
-  'symbol': 'symbol', 'instrument': 'symbol', 'ticker': 'symbol', 'market': 'symbol', 'contract': 'symbol',
-  'side': 'side', 'direction': 'side', 'type': 'side', 'position': 'side', 'action': 'side', 'buy/sell': 'side',
-  'qty': 'qty', 'quantity': 'qty', 'shares': 'qty', 'size': 'qty', 'contracts': 'qty', 'volume': 'qty',
-  'entry price': 'entryPrice', 'entry': 'entryPrice', 'open price': 'entryPrice', 'avg entry': 'entryPrice', 'buy price': 'entryPrice', 'avg. entry price': 'entryPrice',
-  'exit price': 'exitPrice', 'exit': 'exitPrice', 'close price': 'exitPrice', 'avg exit': 'exitPrice', 'sell price': 'exitPrice', 'avg. exit price': 'exitPrice',
-  'net p&l': 'pnl', 'pnl': 'pnl', 'p&l': 'pnl', 'profit/loss': 'pnl', 'net profit': 'pnl', 'realized p&l': 'pnl', 'net p/l': 'pnl', 'amount': 'pnl', 'gain/loss': 'pnl',
+  'date': 'date', 'time': 'date', 'trade date': 'date', 'close date': 'date', 'open date': 'date', 'execution time': 'date', 'open time': 'date', 'close time': 'date',
+  'symbol': 'symbol', 'instrument': 'symbol', 'ticker': 'symbol', 'market': 'symbol', 'contract': 'symbol', 'asset': 'symbol', 'item': 'symbol',
+  'side': 'side', 'direction': 'side', 'type': 'side', 'position': 'side', 'action': 'side', 'buy/sell': 'side', 'trans. type': 'side',
+  'qty': 'qty', 'quantity': 'qty', 'shares': 'qty', 'size': 'qty', 'contracts': 'qty', 'volume': 'qty', 'units': 'qty',
+  'entry price': 'entryPrice', 'entry': 'entryPrice', 'open price': 'entryPrice', 'avg entry': 'entryPrice', 'buy price': 'entryPrice', 'avg. entry price': 'entryPrice', 'trade price': 'entryPrice', 'price': 'entryPrice',
+  'exit price': 'exitPrice', 'exit': 'exitPrice', 'close price': 'exitPrice', 'avg exit': 'exitPrice', 'sell price': 'exitPrice', 'avg. exit price': 'exitPrice', 'closeprice': 'exitPrice',
+  'net p&l': 'pnl', 'pnl': 'pnl', 'p&l': 'pnl', 'profit/loss': 'pnl', 'net profit': 'pnl', 'realized p&l': 'pnl', 'net p/l': 'pnl', 'amount': 'pnl', 'gain/loss': 'pnl', 'profit': 'pnl', 'realized p/l': 'pnl',
   'setup type': 'setupType', 'setup': 'setupType', 'strategy': 'setupType',
   'grade': 'resultGrade', 'rating': 'resultGrade', 'score': 'resultGrade',
   'notes': 'narrative', 'narrative': 'narrative', 'comments': 'narrative', 'description': 'narrative',
   'tags': 'tags', 'label': 'tags', 'labels': 'tags',
   'rr': 'rr', 'r:r': 'rr', 'risk/reward': 'rr', 'r multiple': 'rr',
-  'fees': 'total_fees', 'commission': 'total_fees', 'fee': 'total_fees', 'commissions': 'total_fees',
+  'fees': 'total_fees', 'commission': 'total_fees', 'fee': 'total_fees', 'commissions': 'total_fees', 'swap': 'total_fees', 'taxes': 'total_fees',
+  'asset type': 'assetType', 'asset class': 'assetType', 'security type': 'assetType',
 };
 
 const normalizeSide = (val: string): 'LONG' | 'SHORT' => {
   const v = (val || '').toUpperCase().trim();
-  if (['BUY', 'LONG', 'BOT', 'B', 'BOUGHT'].includes(v)) return 'LONG';
-  if (['SELL', 'SHORT', 'SLD', 'S', 'SOLD'].includes(v)) return 'SHORT';
+  if (['BUY', 'LONG', 'BOT', 'B', 'BOUGHT', 'BUY TO OPEN', 'BUY TO CLOSE', 'ENTRY LONG'].includes(v)) return 'LONG';
+  if (['SELL', 'SHORT', 'SLD', 'S', 'SOLD', 'SELL TO OPEN', 'SELL TO CLOSE', 'ENTRY SHORT'].includes(v)) return 'SHORT';
   return 'LONG';
+};
+
+const normalizeAssetType = (val: string): AssetType => {
+  const v = (val || '').toUpperCase().trim();
+  if (v.includes('FOREX') || v.includes('CURRENCY') || v.includes('FX')) return 'FOREX';
+  if (v.includes('FUTURE') || v.includes('FUT')) return 'FUTURES';
+  return 'STOCKS';
 };
 
 export const parseCSV = (csvText: string, accountId: string = ''): Trade[] => {
@@ -119,7 +127,13 @@ export const parseCSV = (csvText: string, accountId: string = ''): Trade[] => {
   };
 
   const parseNum = (val: string): number => {
-    const cleaned = val.replace(/[$,\s]/g, '');
+    if (!val) return 0;
+    // Handle parentheses for negative numbers: (100.00) -> -100.00
+    let cleaned = val.trim();
+    if (cleaned.startsWith('(') && cleaned.endsWith(')')) {
+      cleaned = '-' + cleaned.slice(1, -1);
+    }
+    cleaned = cleaned.replace(/[$,\s]/g, '');
     const n = parseFloat(cleaned);
     return isNaN(n) ? 0 : n;
   };
@@ -138,21 +152,38 @@ export const parseCSV = (csvText: string, accountId: string = ''): Trade[] => {
     row.push(current);
     if (row.length < 3) continue;
 
+    const symbol = getCell(row, 'symbol', '').toUpperCase();
+    if (!symbol || symbol.includes('BALANCE') || symbol.includes('DEPOSIT')) continue;
+
     const pnlRaw = parseNum(getCell(row, 'pnl', '0'));
-    if (isNaN(pnlRaw) && getCell(row, 'symbol') === '') continue;
+    if (pnlRaw === 0 && symbol === '') continue;
 
     const entryPrice = parseNum(getCell(row, 'entryPrice', '0'));
     const exitPrice  = parseNum(getCell(row, 'exitPrice',  '0'));
     const qty        = parseNum(getCell(row, 'qty', '1')) || 1;
     const rr         = parseNum(getCell(row, 'rr',  '0'));
-    const fees       = parseNum(getCell(row, 'total_fees', '0'));
+    const fees       = parseNum(getCell(row, 'total_fees', '0')) + parseNum(getCell(row, 'swap', '0')) + parseNum(getCell(row, 'taxes', '0'));
+    const assetType  = normalizeAssetType(getCell(row, 'assetType', 'STOCKS'));
     const result: Result = pnlRaw > 0 ? 'WIN' : pnlRaw < 0 ? 'LOSS' : 'BE';
 
     const rawDate = getCell(row, 'date', new Date().toISOString().split('T')[0]);
     // Normalize date to YYYY-MM-DD
     let normalizedDate = rawDate;
     try {
-      const d = new Date(rawDate);
+      // Handle MT5/MT4 formats like 2024.05.20 14:30:00 or 20.05.2024
+      const dateOnly = rawDate.split(' ')[0]; 
+      if (dateOnly.includes('.') || dateOnly.includes('/')) {
+        const parts = dateOnly.split(/[./-]/);
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+             normalizedDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+          } else if (parts[2].length === 4) {
+             normalizedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+        }
+      }
+      
+      const d = new Date(normalizedDate);
       if (!isNaN(d.getTime())) {
         normalizedDate = d.toISOString().split('T')[0];
       }
@@ -163,9 +194,9 @@ export const parseCSV = (csvText: string, accountId: string = ''): Trade[] => {
       accountId,
       timestamp: new Date().toISOString(),
       date: normalizedDate,
-      symbol: getCell(row, 'symbol', 'UNKNOWN').toUpperCase(),
+      symbol,
       side: normalizeSide(getCell(row, 'side', 'LONG')),
-      assetType: 'STOCKS',
+      assetType,
       qty,
       multiplier: 1,
       entryPrice,

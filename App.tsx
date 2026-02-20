@@ -53,6 +53,7 @@ const App: React.FC = () => {
   const [userPlan, setUserPlan] = useState<'free' | 'pro' | 'pro'>('free');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const randomQuote = useMemo(() => TRADER_QUOTES[Math.floor(Math.random() * TRADER_QUOTES.length)], []);
 
@@ -313,24 +314,28 @@ const App: React.FC = () => {
 
   // Handler: CSV Import
   const handleImportCSV = async (csvText: string) => {
+    setIsImporting(true);
     try {
       const { parseCSV } = await import('./services/storage');
       const imported = parseCSV(csvText, activeAccountId !== 'ALL' ? activeAccountId : (accounts[0]?.id || ''));
       if (imported.length === 0) {
         alert('No trades found in CSV. Check the file format.');
+        setIsImporting(false);
         return;
       }
       const merged = [...imported, ...trades];
       setTrades(merged);
       saveTrades(merged);
       await syncTradesToSupabase(merged);
-      alert(`Successfully imported ${imported.length} trades.`);
+      alert(`Successfully imported ${imported.length} trades. Your KPIs have been updated.`);
     } catch (e: any) {
       if (e.message === 'AUTH_ERROR') {
         await handleAuthCleanup();
         return;
       }
       alert(`Import failed: ${e.message}`);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -669,6 +674,18 @@ const App: React.FC = () => {
       
       {isAccountManagerOpen && <AccountManager accounts={accounts} onSave={handleSaveAccount} onClose={() => setIsAccountManagerOpen(false)} plan={userPlan} />}
       {isProfileOpen && <ProfileSettings onClose={() => setIsProfileOpen(false)} plan={userPlan} />}
+      
+      {isImporting && (
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
+          <div className="apple-glass p-10 rounded-[2.5rem] flex flex-col items-center gap-6 shadow-2xl border border-white/20">
+            <div className="w-16 h-16 border-4 border-black/5 border-t-black rounded-full animate-spin" />
+            <div className="text-center">
+              <h3 className="text-sm font-black uppercase tracking-widest">Parsing Data</h3>
+              <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest mt-1">Updating your performance metrics...</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

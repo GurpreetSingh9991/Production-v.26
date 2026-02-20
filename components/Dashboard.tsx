@@ -306,13 +306,6 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     return stats?.activeAlerts.filter(a => !dismissedAlerts.has(a.id)) || [];
   }, [stats?.activeAlerts, dismissedAlerts]);
 
-  if (!stats) return (
-    <div className="flex flex-col items-center justify-center py-40 opacity-20">
-      <ICONS.Logo className="w-16 h-16 mb-4" />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Initialize Account Session</p>
-    </div>
-  );
-
   return (
     <div className="space-y-8 sm:space-y-12 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -337,129 +330,145 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
         </div>
       </div>
 
-      <div className="space-y-6 sm:space-y-8">
-        {/* Row 1: Primary Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <KPIBox label={displayUnit === 'CURRENCY' ? "Balance" : "Return"} value={`${displayUnit === 'CURRENCY' ? '$' : ''}${stats.currentBalance.toLocaleString(undefined, { maximumFractionDigits: 1 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} subtext="Current liquidity" color="black" />
-          <KPIBox label="Win Rate" value={`${stats.winRate.toFixed(0)}%`} subtext={`${stats.wins} wins recorded`} color="black" />
-          <KPIBox label="Avg Reward" value={`${displayUnit === 'CURRENCY' ? '$' : ''}${stats.avgPnL.toLocaleString(undefined, { maximumFractionDigits: 1 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} subtext="Expected value" color={stats.totalNetPnL >= 0 ? 'emerald' : 'rose'} />
-          <KPIBox 
-            label="Streak" 
-            value={`${stats.streakCount}`} 
-            pill={stats.streakType === 'WIN' ? 'WIN' : stats.streakType === 'LOSS' ? 'DD' : 'STABLE'}
-            subtext={stats.streakType === 'WIN' ? 'Succession' : stats.streakType === 'LOSS' ? 'Drawdown' : 'Stable'} 
-            color={stats.streakType === 'WIN' ? 'emerald' : stats.streakType === 'LOSS' ? 'rose' : 'black'} 
-          />
-        </div>
-
-        {/* Row 2: Secondary / Advanced Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <KPIBox 
-            label="Profit Factor" 
-            value={stats.profitFactor.toFixed(2)} 
-            subtext="Gross Profit / Gross Loss" 
-            pill={stats.profitFactor > 1.5 ? 'GOOD' : stats.profitFactor < 1.0 ? 'RISK' : 'NEUTRAL'}
-            color={stats.profitFactor > 1.5 ? 'emerald' : stats.profitFactor >= 1.0 ? 'amber' : 'rose'} 
-            tooltip={`You make $${stats.profitFactor.toFixed(2)} for every $1 you lose`}
-          />
-          <KPIBox 
-            label="Expectancy" 
-            value={`${stats.expectancy >= 0 ? '+' : ''}${displayUnit === 'CURRENCY' ? '$' : ''}${stats.expectancy.toLocaleString(undefined, { maximumFractionDigits: 2 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} 
-            subtext="Expected per trade" 
-            color={stats.expectancy >= 0 ? 'emerald' : 'rose'} 
-            tooltip="The average profit or loss you can expect to make per trade over time."
-          />
-          <KPIBox 
-            label="Total Trades" 
-            value={stats.total.toString()} 
-            subtext={`${stats.wins} wins | ${stats.losses} losses`} 
-            color="black" 
-            tooltip={`Cumulative execution volume across the current scope.`}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 apple-glass p-6 sm:p-8 rounded-[2rem] ambient-shadow relative overflow-hidden">
-          <h3 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-6 sm:mb-8">Equity Progress ({displayUnit})</h3>
-          <div className="h-[200px] sm:h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.equityData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#000" opacity={0.05} />
-                <XAxis dataKey="date" hide />
-                <YAxis hide domain={['auto', 'auto']} />
-                <Tooltip 
-                  cursor={false} 
-                  contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '12px' }}
-                  formatter={(value: any) => `${displayUnit === 'CURRENCY' ? '$' : ''}${value.toLocaleString()}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`}
-                />
-                <Area isAnimationActive={false} type="monotone" dataKey="value" stroke="black" strokeWidth={2.5} fill="transparent" />
-              </AreaChart>
-            </ResponsiveContainer>
+      {!stats ? (
+        <div className="apple-glass p-20 rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-4 border border-black/5">
+          <div className="w-16 h-16 bg-black/5 rounded-full flex items-center justify-center text-black/20">
+            <ICONS.Journal className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest">No Activity Detected</h3>
+            <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest mt-1">
+              {dateRange === 'ALL' ? 'Start by adding your first trade' : `No trades recorded for ${dateRange === 'TODAY' ? 'today' : 'this period'}`}
+            </p>
           </div>
         </div>
+      ) : (
+        <>
+          <div className="space-y-6 sm:space-y-8">
+            {/* Row 1: Primary Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <KPIBox label={displayUnit === 'CURRENCY' ? "Balance" : "Return"} value={`${displayUnit === 'CURRENCY' ? '$' : ''}${stats.currentBalance.toLocaleString(undefined, { maximumFractionDigits: 1 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} subtext="Current liquidity" color="black" />
+              <KPIBox label="Win Rate" value={`${stats.winRate.toFixed(0)}%`} subtext={`${stats.wins} wins recorded`} color="black" />
+              <KPIBox label="Avg Reward" value={`${displayUnit === 'CURRENCY' ? '$' : ''}${stats.avgPnL.toLocaleString(undefined, { maximumFractionDigits: 1 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} subtext="Expected value" color={stats.totalNetPnL >= 0 ? 'emerald' : 'rose'} />
+              <KPIBox 
+                label="Streak" 
+                value={`${stats.streakCount}`} 
+                pill={stats.streakType === 'WIN' ? 'WIN' : stats.streakType === 'LOSS' ? 'DD' : 'STABLE'}
+                subtext={stats.streakType === 'WIN' ? 'Succession' : stats.streakType === 'LOSS' ? 'Drawdown' : 'Stable'} 
+                color={stats.streakType === 'WIN' ? 'emerald' : stats.streakType === 'LOSS' ? 'rose' : 'black'} 
+              />
+            </div>
 
-        <div className="apple-glass p-6 sm:p-8 rounded-[2rem] ambient-shadow">
-          <h3 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-6 sm:mb-8">Weekday Bias ({displayUnit})</h3>
-          <div className="h-[200px] sm:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.pnlByDay}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 800 }} />
-                <Tooltip cursor={false} contentStyle={{ fontSize: '12px' }} formatter={(v:any) => `${displayUnit === 'CURRENCY' ? '$' : ''}${v.toLocaleString()}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} />
-                <Bar dataKey="pnl" isAnimationActive={false}>
-                  {stats.pnlByDay.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#10b981' : '#f43f5e'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {/* Row 2: Secondary / Advanced Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <KPIBox 
+                label="Profit Factor" 
+                value={stats.profitFactor.toFixed(2)} 
+                subtext="Gross Profit / Gross Loss" 
+                pill={stats.profitFactor > 1.5 ? 'GOOD' : stats.profitFactor < 1.0 ? 'RISK' : 'NEUTRAL'}
+                color={stats.profitFactor > 1.5 ? 'emerald' : stats.profitFactor >= 1.0 ? 'amber' : 'rose'} 
+                tooltip={`You make $${stats.profitFactor.toFixed(2)} for every $1 you lose`}
+              />
+              <KPIBox 
+                label="Expectancy" 
+                value={`${stats.expectancy >= 0 ? '+' : ''}${displayUnit === 'CURRENCY' ? '$' : ''}${stats.expectancy.toLocaleString(undefined, { maximumFractionDigits: 2 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} 
+                subtext="Expected per trade" 
+                color={stats.expectancy >= 0 ? 'emerald' : 'rose'} 
+                tooltip="The average profit or loss you can expect to make per trade over time."
+              />
+              <KPIBox 
+                label="Total Trades" 
+                value={stats.total.toString()} 
+                subtext={`${stats.wins} wins | ${stats.losses} losses`} 
+                color="black" 
+                tooltip={`Cumulative execution volume across the current scope.`}
+              />
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Alerts & Insights Panel */}
-      {visibleAlerts.length > 0 && (
-        <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="px-2">
-            <h3 className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em] flex items-center gap-2">
-              <div className="w-1 h-3 bg-black/20 rounded-full" /> Operational Insights
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {visibleAlerts.map((alert) => (
-              <div 
-                key={alert.id}
-                className={`apple-glass p-6 rounded-2xl border-l-4 relative group transition-all duration-300 hover:scale-[1.01] ${
-                  alert.type === 'danger' ? 'border-l-rose-500 bg-rose-500/[0.02]' : 
-                  alert.type === 'warning' ? 'border-l-amber-500 bg-amber-500/[0.02]' : 
-                  alert.type === 'success' ? 'border-l-emerald-500 bg-emerald-500/[0.02]' : 
-                  'border-l-violet-500 bg-violet-500/[0.02]'
-                }`}
-              >
-                <button 
-                  onClick={() => setDismissedAlerts(prev => new Set(prev).add(alert.id))}
-                  className="absolute top-4 right-4 text-black/10 hover:text-black transition-colors"
-                >
-                  <ICONS.Close className="w-3.5 h-3.5" />
-                </button>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2 rounded-xl shrink-0 ${
-                    alert.type === 'danger' ? 'bg-rose-500/10 text-rose-600' : 
-                    alert.type === 'warning' ? 'bg-amber-500/10 text-amber-600' : 
-                    alert.type === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 
-                    'bg-violet-500/10 text-violet-600'
-                  }`}>
-                    {alert.icon}
-                  </div>
-                  <h4 className="text-[11px] font-black uppercase tracking-widest">{alert.title}</h4>
-                </div>
-                <p className="text-[11px] font-semibold text-black/60 leading-relaxed italic pr-4">
-                  "{alert.message}"
-                </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 apple-glass p-6 sm:p-8 rounded-[2rem] ambient-shadow relative overflow-hidden">
+              <h3 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-6 sm:mb-8">Equity Progress ({displayUnit})</h3>
+              <div className="h-[200px] sm:h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats.equityData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#000" opacity={0.05} />
+                    <XAxis dataKey="date" hide />
+                    <YAxis hide domain={['auto', 'auto']} />
+                    <Tooltip 
+                      cursor={false} 
+                      contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '12px' }}
+                      formatter={(value: any) => `${displayUnit === 'CURRENCY' ? '$' : ''}${value.toLocaleString()}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`}
+                    />
+                    <Area isAnimationActive={false} type="monotone" dataKey="value" stroke="black" strokeWidth={2.5} fill="transparent" />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-            ))}
+            </div>
+
+            <div className="apple-glass p-6 sm:p-8 rounded-[2rem] ambient-shadow">
+              <h3 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-6 sm:mb-8">Weekday Bias ({displayUnit})</h3>
+              <div className="h-[200px] sm:h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.pnlByDay}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 800 }} />
+                    <Tooltip cursor={false} contentStyle={{ fontSize: '12px' }} formatter={(v:any) => `${displayUnit === 'CURRENCY' ? '$' : ''}${v.toLocaleString()}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} />
+                    <Bar dataKey="pnl" isAnimationActive={false}>
+                      {stats.pnlByDay.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#10b981' : '#f43f5e'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
-        </section>
+
+          {/* Alerts & Insights Panel */}
+          {visibleAlerts.length > 0 && (
+            <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="px-2">
+                <h3 className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em] flex items-center gap-2">
+                  <div className="w-1 h-3 bg-black/20 rounded-full" /> Operational Insights
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {visibleAlerts.map((alert) => (
+                  <div 
+                    key={alert.id}
+                    className={`apple-glass p-6 rounded-2xl border-l-4 relative group transition-all duration-300 hover:scale-[1.01] ${
+                      alert.type === 'danger' ? 'border-l-rose-500 bg-rose-500/[0.02]' : 
+                      alert.type === 'warning' ? 'border-l-amber-500 bg-amber-500/[0.02]' : 
+                      alert.type === 'success' ? 'border-l-emerald-500 bg-emerald-500/[0.02]' : 
+                      'border-l-violet-500 bg-violet-500/[0.02]'
+                    }`}
+                  >
+                    <button 
+                      onClick={() => setDismissedAlerts(prev => new Set(prev).add(alert.id))}
+                      className="absolute top-4 right-4 text-black/10 hover:text-black transition-colors"
+                    >
+                      <ICONS.Close className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`p-2 rounded-xl shrink-0 ${
+                        alert.type === 'danger' ? 'bg-rose-500/10 text-rose-600' : 
+                        alert.type === 'warning' ? 'bg-amber-500/10 text-amber-600' : 
+                        alert.type === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 
+                        'bg-violet-500/10 text-violet-600'
+                      }`}>
+                        {alert.icon}
+                      </div>
+                      <h4 className="text-[11px] font-black uppercase tracking-widest">{alert.title}</h4>
+                    </div>
+                    <p className="text-[11px] font-semibold text-black/60 leading-relaxed italic pr-4">
+                      "{alert.message}"
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
 
       <section className="pt-4">
