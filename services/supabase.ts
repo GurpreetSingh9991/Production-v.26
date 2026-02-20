@@ -49,10 +49,10 @@ export const getSupabaseAccounts = async (): Promise<Account[] | null> => {
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error("Supabase Account Fetch Error:", error.message);
     if (error.message.toLowerCase().includes('jwt') || error.message.toLowerCase().includes('token')) {
       throw new Error('AUTH_ERROR');
     }
+    console.error("Supabase Account Fetch Error:", error.message);
     return null;
   }
   
@@ -263,10 +263,10 @@ export const getSupabaseTrades = async (): Promise<Trade[] | null> => {
     .order('date', { ascending: false });
 
   if (error) {
-    console.error("Supabase Fetch Error:", error.message);
     if (error.message.toLowerCase().includes('jwt') || error.message.toLowerCase().includes('token')) {
       throw new Error('AUTH_ERROR');
     }
+    console.error("Supabase Fetch Error:", error.message);
     return null;
   }
   return (data || []).map(mapFromDb);

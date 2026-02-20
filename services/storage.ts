@@ -63,43 +63,135 @@ export const exportToCSV = (trades: Trade[]) => {
   document.body.removeChild(link);
 };
 
-export const parseCSV = (csvText: string): Trade[] => {
-  const lines = csvText.split(/\r?\n/);
+const COLUMN_ALIASES: Record<string, string> = {
+  'date': 'date', 'time': 'date', 'trade date': 'date', 'close date': 'date', 'open date': 'date',
+  'symbol': 'symbol', 'instrument': 'symbol', 'ticker': 'symbol', 'market': 'symbol', 'contract': 'symbol',
+  'side': 'side', 'direction': 'side', 'type': 'side', 'position': 'side', 'action': 'side', 'buy/sell': 'side',
+  'qty': 'qty', 'quantity': 'qty', 'shares': 'qty', 'size': 'qty', 'contracts': 'qty', 'volume': 'qty',
+  'entry price': 'entryPrice', 'entry': 'entryPrice', 'open price': 'entryPrice', 'avg entry': 'entryPrice', 'buy price': 'entryPrice', 'avg. entry price': 'entryPrice',
+  'exit price': 'exitPrice', 'exit': 'exitPrice', 'close price': 'exitPrice', 'avg exit': 'exitPrice', 'sell price': 'exitPrice', 'avg. exit price': 'exitPrice',
+  'net p&l': 'pnl', 'pnl': 'pnl', 'p&l': 'pnl', 'profit/loss': 'pnl', 'net profit': 'pnl', 'realized p&l': 'pnl', 'net p/l': 'pnl', 'amount': 'pnl', 'gain/loss': 'pnl',
+  'setup type': 'setupType', 'setup': 'setupType', 'strategy': 'setupType',
+  'grade': 'resultGrade', 'rating': 'resultGrade', 'score': 'resultGrade',
+  'notes': 'narrative', 'narrative': 'narrative', 'comments': 'narrative', 'description': 'narrative',
+  'tags': 'tags', 'label': 'tags', 'labels': 'tags',
+  'rr': 'rr', 'r:r': 'rr', 'risk/reward': 'rr', 'r multiple': 'rr',
+  'fees': 'total_fees', 'commission': 'total_fees', 'fee': 'total_fees', 'commissions': 'total_fees',
+};
+
+const normalizeSide = (val: string): 'LONG' | 'SHORT' => {
+  const v = (val || '').toUpperCase().trim();
+  if (['BUY', 'LONG', 'BOT', 'B', 'BOUGHT'].includes(v)) return 'LONG';
+  if (['SELL', 'SHORT', 'SLD', 'S', 'SOLD'].includes(v)) return 'SHORT';
+  return 'LONG';
+};
+
+export const parseCSV = (csvText: string, accountId: string = ''): Trade[] => {
+  const lines = csvText.split(/\r?\n/).filter(l => l.trim().length > 0);
   if (lines.length < 2) return [];
+
+  const rawHeaders = lines[0].split(',').map(h =>
+    h.trim().toLowerCase().replace(/^["'\uFEFF]+|["']+$/g, '')
+  );
+
+  const colIndex: Record<string, number> = {};
+  rawHeaders.forEach((h, i) => {
+    const mapped = COLUMN_ALIASES[h];
+    if (mapped && !(mapped in colIndex)) {
+      colIndex[mapped] = i;
+    }
+  });
+
+  const required = ['date', 'symbol', 'pnl'];
+  const missing = required.filter(r => !(r in colIndex));
+  if (missing.length > 0) {
+    throw new Error(
+      `Could not find required columns: ${missing.join(', ')}.\n` +
+      `Found headers: ${rawHeaders.slice(0, 8).join(', ')}...\n` +
+      `Your CSV needs at least: Date, Symbol, and P&L (or Net P&L) columns.`
+    );
+  }
+
+  const getCell = (row: string[], field: string, fallback = ''): string => {
+    const idx = colIndex[field];
+    if (idx === undefined || idx >= row.length) return fallback;
+    return (row[idx] || fallback).trim().replace(/^["']|["']$/g, '');
+  };
+
+  const parseNum = (val: string): number => {
+    const cleaned = val.replace(/[$,\s]/g, '');
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  };
 
   const trades: Trade[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',');
-    if (values.length < 12) continue;
+    // Handle quoted CSV fields properly
+    const row: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (const char of lines[i]) {
+      if (char === '"') { inQuotes = !inQuotes; }
+      else if (char === ',' && !inQuotes) { row.push(current); current = ''; }
+      else { current += char; }
+    }
+    row.push(current);
+    if (row.length < 3) continue;
+
+    const pnlRaw = parseNum(getCell(row, 'pnl', '0'));
+    if (isNaN(pnlRaw) && getCell(row, 'symbol') === '') continue;
+
+    const entryPrice = parseNum(getCell(row, 'entryPrice', '0'));
+    const exitPrice  = parseNum(getCell(row, 'exitPrice',  '0'));
+    const qty        = parseNum(getCell(row, 'qty', '1')) || 1;
+    const rr         = parseNum(getCell(row, 'rr',  '0'));
+    const fees       = parseNum(getCell(row, 'total_fees', '0'));
+    const result: Result = pnlRaw > 0 ? 'WIN' : pnlRaw < 0 ? 'LOSS' : 'BE';
+
+    const rawDate = getCell(row, 'date', new Date().toISOString().split('T')[0]);
+    // Normalize date to YYYY-MM-DD
+    let normalizedDate = rawDate;
+    try {
+      const d = new Date(rawDate);
+      if (!isNaN(d.getTime())) {
+        normalizedDate = d.toISOString().split('T')[0];
+      }
+    } catch { /* keep raw */ }
 
     trades.push({
       id: crypto.randomUUID(),
-      accountId: '', 
+      accountId,
       timestamp: new Date().toISOString(),
-      date: values[0],
-      symbol: values[1],
-      side: values[2] as Side,
+      date: normalizedDate,
+      symbol: getCell(row, 'symbol', 'UNKNOWN').toUpperCase(),
+      side: normalizeSide(getCell(row, 'side', 'LONG')),
       assetType: 'STOCKS',
-      qty: parseFloat(values[3]),
+      qty,
       multiplier: 1,
-      entryPrice: parseFloat(values[4]),
-      exitPrice: parseFloat(values[5]),
+      entryPrice,
+      exitPrice,
       stopLossPrice: 0,
       targetPrice: 0,
-      entryTime: '00:00',
-      exitTime: '00:00',
+      entryTime: '09:30',
+      exitTime: '16:00',
       duration: '0m',
-      pnl: parseFloat(values[8]),
-      rr: parseFloat(values[13]) || 0,
-      result: values[11] as Result,
-      resultGrade: values[12] as Grade,
-      narrative: values[14]?.replace(/^"|"$/g, '') || '',
-      chartLink: '',
-      setupType: values[10] || 'A',
+      pnl: pnlRaw,
+      rr,
+      result,
+      resultGrade: (getCell(row, 'resultGrade', 'B') as Grade) || 'B',
+      setupType: getCell(row, 'setupType', 'A') || 'A',
       weeklyBias: 'SIDEWAYS',
+      narrative: getCell(row, 'narrative', ''),
+      chartLink: '',
+      tags: getCell(row, 'tags') ? getCell(row, 'tags').split(';').map((t: string) => t.trim()).filter(Boolean) : [],
+      total_fees: fees,
+      gross_pnl: pnlRaw + fees,
+      net_pnl: pnlRaw,
       executions: [],
       mistakes: [],
-      psychology: { moodBefore: 3, moodAfter: 3, states: [], notes: '' }
+      psychology: { moodBefore: 3, moodAfter: 3, states: [], notes: '' },
+      followedPlan: true,
+      plan: '',
     });
   }
   return trades;

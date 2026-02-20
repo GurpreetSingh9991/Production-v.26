@@ -17,6 +17,24 @@ import AccountManager from './components/AccountManager';
 import Auth from './components/Auth';
 import { Session } from '@supabase/supabase-js';
 
+const UpgradeGate: React.FC<{ feature: string; onUpgrade: () => void }> = ({ feature, onUpgrade }) => (
+  <div className="apple-glass rounded-[2rem] max-w-md mx-auto mt-20 p-10 text-center flex flex-col items-center border border-black/5 shadow-sm">
+    <div className="w-16 h-16 bg-black/5 rounded-2xl flex items-center justify-center mb-6">
+      <svg className="w-8 h-8 text-black/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+    </div>
+    <h2 className="text-xl font-black tracking-tight text-black mb-2">{feature} — Pro Feature</h2>
+    <p className="text-xs font-semibold text-black/60 mb-8">Upgrade to Pro to unlock this feature</p>
+    <button 
+      onClick={onUpgrade}
+      className="px-8 py-4 bg-black text-white rounded-full text-[11px] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all"
+    >
+      Upgrade to Pro →
+    </button>
+  </div>
+);
+
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('DASHBOARD');
   const [displayUnit, setDisplayUnit] = useState<PerformanceUnit>('CURRENCY');
@@ -33,6 +51,8 @@ const App: React.FC = () => {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [upgradePrompt, setUpgradePrompt] = useState(false);
   const [userPlan, setUserPlan] = useState<'free' | 'pro' | 'pro'>('free');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
 
   const randomQuote = useMemo(() => TRADER_QUOTES[Math.floor(Math.random() * TRADER_QUOTES.length)], []);
 
@@ -220,6 +240,98 @@ const App: React.FC = () => {
     setAccounts(newAccounts);
     localStorage.setItem('tf_accounts', JSON.stringify(newAccounts));
     if (session) await syncAccountsToSupabase(newAccounts);
+  };
+
+  // Handler: Google Sheets Sync
+  const handleExternalSync = async () => {
+    const sheetUrl = localStorage.getItem('tf_sheet_url');
+    if (!sheetUrl) {
+      alert('No Google Sheet linked. Add a sheet URL in Settings first.');
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const { fetchTradesFromSheets } = await import('./services/sync');
+      const syncedTrades = await fetchTradesFromSheets({ sheetUrl, lastSynced: null, autoSync: false });
+      if (syncedTrades && syncedTrades.length > 0) {
+        // Assign active account ID to imported trades
+        const withAccount = syncedTrades.map(t => ({
+          ...t,
+          accountId: t.accountId || (accounts[0]?.id || '')
+        }));
+        const merged = [...withAccount, ...trades.filter(
+          existing => !withAccount.some(imp => imp.date === existing.date && imp.symbol === existing.symbol)
+        )];
+        setTrades(merged);
+        saveTrades(merged);
+        await syncTradesToSupabase(merged);
+        alert(`Successfully synced ${syncedTrades.length} trades from Google Sheets.`);
+      } else if (syncedTrades !== null) {
+        alert('Sheet synced but no trades found. Check your sheet format.');
+      } else {
+        alert('Sync failed. Make sure your sheet is shared to "Anyone with the link".');
+      }
+    } catch (e: any) {
+      if (e.message === 'AUTH_ERROR') {
+        await handleAuthCleanup();
+        return;
+      }
+      alert(`Sync error: ${e.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Handler: Cloud Refresh
+  const handleCloudRefresh = async () => {
+    if (!session) return;
+    setIsCloudSyncing(true);
+    try {
+      const [remoteAccounts, remoteTrades] = await Promise.all([
+        getSupabaseAccounts(),
+        getSupabaseTrades()
+      ]);
+      if (remoteAccounts) {
+        setAccounts(remoteAccounts);
+        localStorage.setItem('tf_accounts', JSON.stringify(remoteAccounts));
+      }
+      if (remoteTrades) {
+        setTrades(remoteTrades);
+        saveTrades(remoteTrades);
+      }
+      alert('Cloud data refreshed successfully.');
+    } catch (e: any) {
+      if (e.message === 'AUTH_ERROR') {
+        await handleAuthCleanup();
+        return;
+      }
+      alert('Cloud refresh failed. Check your connection.');
+    } finally {
+      setIsCloudSyncing(false);
+    }
+  };
+
+  // Handler: CSV Import
+  const handleImportCSV = async (csvText: string) => {
+    try {
+      const { parseCSV } = await import('./services/storage');
+      const imported = parseCSV(csvText, activeAccountId !== 'ALL' ? activeAccountId : (accounts[0]?.id || ''));
+      if (imported.length === 0) {
+        alert('No trades found in CSV. Check the file format.');
+        return;
+      }
+      const merged = [...imported, ...trades];
+      setTrades(merged);
+      saveTrades(merged);
+      await syncTradesToSupabase(merged);
+      alert(`Successfully imported ${imported.length} trades.`);
+    } catch (e: any) {
+      if (e.message === 'AUTH_ERROR') {
+        await handleAuthCleanup();
+        return;
+      }
+      alert(`Import failed: ${e.message}`);
+    }
   };
 
   if (isAuthLoading) {
@@ -422,12 +534,39 @@ const App: React.FC = () => {
              )}
              {activeView === 'TRADES_LOG' && <TradeLog displayUnit={displayUnit} trades={filteredTrades} onEdit={(t) => {setEditingTrade(t); setIsFormOpen(true);}} onDelete={handleDeleteTrade} />}
              {activeView === 'CALENDAR' && <Calendar trades={filteredTrades} displayUnit={displayUnit} startingEquity={startingEquity} onTradeEdit={(t) => {setEditingTrade(t); setIsFormOpen(true);}} onTradeDelete={handleDeleteTrade} />}
-             {activeView === 'ANALYTICS' && <Analytics trades={filteredTrades} />}
-             {activeView === 'PSYCHOLOGY' && <Psychology trades={filteredTrades} />}
-             {activeView === 'AI_INTELLIGENCE' && <AIPage trades={filteredTrades} />}
+             {activeView === 'ANALYTICS' && (
+               userPlan === 'pro' 
+                 ? <Analytics trades={filteredTrades} />
+                 : <UpgradeGate feature="Analytics" onUpgrade={() => setUpgradePrompt(true)} />
+             )}
+             {activeView === 'PSYCHOLOGY' && (
+               userPlan === 'pro' 
+                 ? <Psychology trades={filteredTrades} />
+                 : <UpgradeGate feature="Psychology Tracker" onUpgrade={() => setUpgradePrompt(true)} />
+             )}
+             {activeView === 'AI_INTELLIGENCE' && (
+               userPlan === 'pro' 
+                 ? <AIPage trades={filteredTrades} />
+                 : <UpgradeGate feature="AI Intelligence" onUpgrade={() => setUpgradePrompt(true)} />
+             )}
              {activeView === 'SETTINGS' && (
                <div className="px-6 sm:px-10 lg:px-0">
-                 <SyncSettings config={{sheetUrl: localStorage.getItem('tf_sheet_url') || '', lastSynced:null, autoSync:false}} onSave={(cfg) => { if (cfg.sheetUrl) localStorage.setItem('tf_sheet_url', cfg.sheetUrl); }} onClose={() => setActiveView('DASHBOARD')} onExportCSV={() => exportToCSV(trades)} onExternalSync={()=>{}} onCloudRefresh={()=>{}} isSyncing={false} isCloudSyncing={false} hasSession={!!session} displayUnit={displayUnit} setDisplayUnit={setDisplayUnit} />
+                 <SyncSettings
+                   config={{sheetUrl: localStorage.getItem('tf_sheet_url') || '', lastSynced: null, autoSync: false}}
+                   onSave={(cfg) => { if (cfg.sheetUrl) localStorage.setItem('tf_sheet_url', cfg.sheetUrl); }}
+                   onClose={() => setActiveView('DASHBOARD')}
+                   onExportCSV={() => exportToCSV(trades)}
+                   onExternalSync={handleExternalSync}
+                   onCloudRefresh={handleCloudRefresh}
+                   onImportCSV={handleImportCSV}
+                   isSyncing={isSyncing}
+                   isCloudSyncing={isCloudSyncing}
+                   hasSession={!!session}
+                   displayUnit={displayUnit}
+                   setDisplayUnit={setDisplayUnit}
+                   userPlan={userPlan}
+                   activeAccountId={activeAccountId}
+                 />
                </div>
              )}
           </div>
