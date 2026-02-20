@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeFlow Studio — Professional Trading Journal</title>
+<meta name="description" content="The professional-grade trading journal for serious traders. AI-powered insights, psychology tracking, and institutional analytics.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  /* Page */
+  --page:    #efefef;
+  --section: #f5f5f5;
+  --white:   #ffffff;
+  --card:    #ffffff;
+
+  /* Text */
+  --text:    #111111;
+  --sub:     #555555;
+  --muted:   #999999;
+  --faint:   #bbbbbb;
+
+  /* Borders */
+  --border:  rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.13);
+
+  /* Brand */
+  --green:   #10b981;
+  --green2:  #059669;
+  --red:     #f43f5e;
+  --amber:   #f59e0b;
+  --indigo:  #6366f1;
+
+  /* Dark (sidebar + CTA sections) */
+  --dark:    #111111;
+  --dark2:   #1a1a1a;
+}
+
+html{color-scheme:light;}
+
+body{
+  background:var(--page);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ═══════════════════════════════════════════════
+   GRID BACKGROUND
+═══════════════════════════════════════════════ */
+.grid-bg{
+  background-image:
+    linear-gradient(rgba(0,0,0,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,0,0,0.04) 1px,transparent 1px);
+  background-size:64px 64px;
+}
+
+/* ═══════════════════════════════════════════════
+   SCROLL REVEAL
+═══════════════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal.d1{transition-delay:.1s;}
+.reveal.d2{transition-delay:.2s;}
+.reveal.d3{transition-delay:.3s;}
+.reveal.d4{transition-delay:.4s;}
+
+/* ═══════════════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════════════ */
+#nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:60px;display:flex;align-items:center;
+  background:transparent;
+  border-bottom:1px solid transparent;
+  transition:background .3s,border-color .3s,box-shadow .3s;
+}
+#nav.scrolled{
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(20px);
+  border-color:rgba(0,0,0,.08);
+  box-shadow:0 1px 20px rgba(0,0,0,.07);
+}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 32px;width:100%;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:9px;text-decoration:none;}
+.nav-logo-mark{width:32px;height:32px;background:#111;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.nav-logo-name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;letter-spacing:-.03em;color:#111;}
+.nav-logo-name span{color:#aaa;font-weight:400;}
+.nav-links{display:flex;align-items:center;gap:2px;}
+.nav-links a{font-size:13px;font-weight:500;color:var(--sub);text-decoration:none;padding:7px 14px;border-radius:7px;transition:color .2s,background .2s;}
+.nav-links a:hover{color:#111;background:rgba(0,0,0,.05);}
+.nav-actions{display:flex;align-items:center;gap:8px;}
+.btn-ghost-nav{background:none;border:none;color:var(--sub);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer;transition:color .2s,background .2s;}
+.btn-ghost-nav:hover{color:#111;background:rgba(0,0,0,.05);}
+.btn-nav-cta{background:#111;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;padding:8px 18px;border-radius:7px;border:none;cursor:pointer;transition:background .2s,transform .15s;}
+.btn-nav-cta:hover{background:#222;transform:translateY(-1px);}
+
+/* ═══════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════ */
+.hero{
+  min-height:100vh;padding:130px 32px 80px;
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;position:relative;overflow:hidden;
+  background:var(--page);
+}
+.hero-glow{
+  position:absolute;top:10%;left:50%;transform:translateX(-50%);
+  width:800px;height:500px;
+  background:radial-gradient(ellipse,rgba(16,185,129,.1) 0%,transparent 65%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:5px 14px;
+  background:rgba(16,185,129,.08);
+  border:1px solid rgba(16,185,129,.25);
+  border-radius:100px;margin-bottom:28px;
+  animation:fadeUp .5s ease both;
+}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:throb 2s infinite;}
+.hero-badge-text{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--green);}
+@keyframes throb{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.hero h1{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(40px,6vw,78px);
+  font-weight:800;line-height:1.06;letter-spacing:-.035em;
+  color:var(--text);max-width:860px;
+  animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .1s both;
+}
+.hero h1 em{font-style:normal;color:var(--green);}
+
+.hero-sub{
+  margin-top:20px;max-width:520px;
+  font-size:16px;line-height:1.75;color:var(--sub);
+  font-weight:400;letter-spacing:-.01em;
+  animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .2s both;
+}
+.hero-ctas{
+  margin-top:32px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;
+  animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .3s both;
+}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:7px;
+  background:#111;color:#fff;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;
+  padding:12px 24px;border-radius:8px;border:none;cursor:pointer;
+  text-decoration:none;
+  box-shadow:0 2px 12px rgba(0,0,0,.18);
+  transition:transform .2s,box-shadow .2s,background .2s;
+}
+.btn-primary:hover{background:#222;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.22);}
+
+.btn-secondary{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--white);color:var(--sub);
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  padding:12px 24px;border-radius:8px;border:1px solid var(--border2);
+  cursor:pointer;text-decoration:none;
+  transition:background .2s,border-color .2s,color .2s;
+}
+.btn-secondary:hover{background:#f5f5f5;border-color:rgba(0,0,0,.18);color:#111;}
+
+.hero-proof{
+  margin-top:16px;font-size:11.5px;color:var(--faint);
+  font-family:'Inter',sans-serif;letter-spacing:.03em;
+  animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .4s both;
+}
+
+/* ═══════════════════════════════════════════════
+   DASHBOARD MOCKUP
+═══════════════════════════════════════════════ */
+.mockup-wrap{
+  margin-top:56px;width:100%;max-width:1060px;position:relative;
+  animation:fadeUp 1s cubic-bezier(.16,1,.3,1) .5s both;
+}
+.mockup-glow{
+  position:absolute;inset:-40px;
+  background:radial-gradient(ellipse at 50% 55%,rgba(16,185,129,.1),transparent 65%);
+  pointer-events:none;z-index:-1;
+}
+.mockup-frame{
+  background:#e8e8e8;
+  border:1px solid rgba(0,0,0,.12);
+  border-radius:18px;overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.04);
+}
+.mockup-chrome{
+  height:36px;background:#1e1e1e;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;align-items:center;padding:0 14px;gap:10px;
+}
+.chrome-dots{display:flex;gap:5px;}
+.chrome-dot{width:10px;height:10px;border-radius:50%;}
+.chrome-url{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:#555;}
+
+.mockup-body{display:flex;height:460px;}
+
+/* Sidebar */
+.mock-sidebar{
+  width:58px;background:#111;
+  display:flex;flex-direction:column;align-items:center;
+  padding:12px 0;gap:2px;flex-shrink:0;
+}
+.sidebar-logo{
+  width:28px;height:28px;background:#fff;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:10px;
+}
+.sidebar-btn{
+  width:36px;height:36px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border:none;background:transparent;transition:background .15s;
+}
+.sidebar-btn svg{width:15px;height:15px;stroke:#555;stroke-width:1.8;fill:none;}
+.sidebar-btn.act{background:rgba(255,255,255,.12);}
+.sidebar-btn.act svg{stroke:#fff;}
+.sidebar-btn:hover:not(.act){background:rgba(255,255,255,.07);}
+.sb-spacer{flex:1;}
+.sb-bottom{display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:4px;}
+
+/* Left profile panel */
+.mock-left{
+  width:198px;background:#f0f0f0;flex-shrink:0;
+  border-right:1px solid rgba(0,0,0,.07);
+  display:flex;flex-direction:column;padding:14px 13px;overflow:hidden;
+}
+.mlp-profile{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.mlp-avatar{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#6366f1,#4f46e5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;
+}
+.mlp-name{font-size:12px;font-weight:700;color:#111;letter-spacing:-.02em;}
+.mlp-email{font-size:9.5px;color:#aaa;margin-top:1px;}
+
+.mlp-sec{
+  font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:#bbb;margin-bottom:7px;margin-top:3px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.mlp-sec-sw{font-size:8.5px;font-weight:700;color:var(--green);cursor:pointer;letter-spacing:.04em;}
+
+.mlp-acct-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.mlp-acct-name{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#222;}
+.mlp-acct-dot{width:7px;height:7px;border-radius:50%;background:#111;}
+.mlp-acct-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,.12);color:var(--green);}
+
+.mlp-pval{
+  font-family:'JetBrains Mono',monospace;
+  font-size:21px;font-weight:600;color:#111;
+  margin:5px 0 2px;letter-spacing:-.02em;
+}
+.mlp-today{font-size:10px;font-weight:600;color:var(--green);margin-bottom:12px;}
+
+.mlp-divider{height:1px;background:rgba(0,0,0,.08);margin:9px 0;}
+
+.mlp-metric-row{display:flex;gap:6px;margin-bottom:6px;}
+.mlp-metric-card{
+  flex:1;background:#fff;border-radius:9px;padding:8px 9px;
+  border:1px solid rgba(0,0,0,.05);
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.mlp-metric-lbl{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#bbb;}
+.mlp-metric-val{font-size:12px;font-weight:700;color:#111;margin-top:3px;}
+
+.mlp-eff{
+  background:#fff;border-radius:9px;padding:9px 10px;
+  border:1px solid rgba(0,0,0,.05);
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.mlp-eff-lbl{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#bbb;}
+.mlp-eff-val{font-size:12.5px;font-weight:700;color:#111;margin-top:2px;}
+
+.mlp-quote{
+  margin-top:auto;padding-top:12px;border-top:1px solid rgba(0,0,0,.07);
+  font-size:9px;color:#bbb;line-height:1.55;font-style:italic;
+}
+
+/* Main content */
+.mock-main{
+  flex:1;background:#e8e8e8;
+  padding:16px 18px;display:flex;flex-direction:column;gap:10px;overflow:hidden;min-width:0;
+}
+.mock-topbar{display:flex;align-items:flex-start;justify-content:space-between;}
+.mock-page-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:800;color:#111;letter-spacing:-.03em;}
+.mock-new-entry{
+  display:flex;align-items:center;gap:5px;
+  background:#111;color:#fff;font-size:9.5px;font-weight:700;
+  padding:6px 11px;border-radius:7px;letter-spacing:.04em;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+
+.mock-tabs{display:flex;gap:3px;margin-top:2px;}
+.mtab{font-size:10px;font-weight:700;padding:4px 13px;border-radius:100px;letter-spacing:.04em;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
+.mtab.act{background:#111;color:#fff;}
+.mtab.inact{background:rgba(0,0,0,.06);color:#999;display:flex;align-items:center;gap:4px;}
+.mtab-dot{width:5px;height:5px;border-radius:50%;background:#ccc;}
+
+.mock-subtitle{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:800;color:#111;letter-spacing:-.025em;margin-top:-2px;}
+
+/* Metric cards row 1 — 4 up */
+.mc-row4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+/* Metric cards row 2 — 3 up */
+.mc-row3{display:grid;grid-template-columns:1.4fr 1fr .8fr;gap:7px;}
+
+.perf-card{
+  background:#fff;border-radius:13px;padding:13px 14px;
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow:0 1px 4px rgba(0,0,0,.05);
+}
+.pc-lbl{
+  font-size:8.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:#bbb;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.pc-badge-dd{font-size:8px;font-weight:800;background:rgba(244,63,94,.1);color:var(--red);padding:2px 6px;border-radius:4px;letter-spacing:.05em;}
+.pc-badge-good{font-size:8px;font-weight:800;background:rgba(16,185,129,.1);color:var(--green);padding:2px 6px;border-radius:4px;letter-spacing:.05em;}
+.pc-val{
+  font-family:'JetBrains Mono',monospace;
+  font-size:19px;font-weight:600;color:#111;
+  margin-top:5px;letter-spacing:-.01em;
+}
+.pc-val.green{color:var(--green);}
+.pc-val.red{color:var(--red);}
+.pc-sub{font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#ccc;margin-top:3px;}
+
+/* Charts row */
+.chart-row{display:grid;grid-template-columns:1.65fr 1fr;gap:7px;flex:1;min-height:0;}
+.chart-card{
+  background:#fff;border-radius:13px;padding:13px;
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow:0 1px 4px rgba(0,0,0,.05);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.cc-lbl{font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#bbb;margin-bottom:8px;}
+
+/* Equity curve — dark line on white card */
+.eq-path{
+  stroke:#111;stroke-width:2.2;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:3000;stroke-dashoffset:3000;
+}
+.eq-path.animated{animation:drawLine 2.2s cubic-bezier(.4,0,.2,1) .4s forwards;}
+@keyframes drawLine{to{stroke-dashoffset:0;}}
+
+.eq-dot{opacity:0;}
+.eq-dot.animated{opacity:1;animation:pulseDot 2s ease-in-out infinite;}
+@keyframes pulseDot{0%,100%{r:3.5;opacity:1}50%{r:6;opacity:.4}}
+
+/* Weekday bars */
+.wday-bars{display:flex;align-items:flex-end;gap:5px;flex:1;padding-top:4px;}
+.wday-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.wday-bar{
+  width:100%;border-radius:4px 4px 0 0;
+  transform-origin:bottom;transform:scaleY(0);
+  transition:transform .7s cubic-bezier(.34,1.56,.64,1);
+}
+.wday-bar.anim{transform:scaleY(1);}
+.wday-lbl{font-size:8.5px;font-family:'JetBrains Mono',monospace;color:#ccc;}
+
+/* Eyebrow labels */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:10.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--green);margin-bottom:14px;
+}
+.eyebrow-line{width:22px;height:1.5px;background:var(--green);}
+
+/* Section headings */
+.sec-h{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(30px,3.6vw,48px);
+  font-weight:800;letter-spacing:-.04em;line-height:1.1;color:var(--text);
+}
+.sec-h em{font-style:normal;color:var(--green);}
+.sec-p{font-size:15.5px;color:var(--sub);line-height:1.8;max-width:500px;margin-top:14px;}
+
+/* ═══════════════════════════════════════════════
+   STATS BAR  (dark strip)
+═══════════════════════════════════════════════ */
+.stats-bar{background:#111;border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);padding:36px 32px;}
+.stats-bar-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);}
+.sb-item{text-align:center;position:relative;}
+.sb-item+.sb-item::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);height:36px;width:1px;background:rgba(255,255,255,.08);}
+.sb-num{font-family:'Plus Jakarta Sans',sans-serif;font-size:42px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.04em;}
+.sb-num .acc{color:var(--green);}
+.sb-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#555;margin-top:6px;}
+
+/* ═══════════════════════════════════════════════
+   CONTAINER
+═══════════════════════════════════════════════ */
+.container{max-width:1280px;margin:0 auto;padding:0 40px;}
+
+/* ═══════════════════════════════════════════════
+   FEATURES
+═══════════════════════════════════════════════ */
+.features-sec{padding:110px 0;background:var(--page);}
+/* 3-col uniform grid — no "wide" spans so all cards same size */
+.feat-grid{
+  margin-top:56px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+.feat-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:28px 28px 24px;
+  transition:border-color .3s,transform .3s,box-shadow .3s;
+  position:relative;overflow:hidden;
+  box-shadow:0 1px 6px rgba(0,0,0,.05);
+  display:flex;flex-direction:column;
+}
+.feat-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:transparent;transition:background .35s;
+}
+.feat-card:hover{
+  border-color:rgba(16,185,129,.28);
+  transform:translateY(-4px);
+  box-shadow:0 14px 40px rgba(0,0,0,.09);
+}
+.feat-card:hover::after{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+
+/* Icon box */
+.feat-icon{
+  width:46px;height:46px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:18px;flex-shrink:0;
+}
+.feat-icon svg{width:22px;height:22px;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.fi-green{ background:rgba(16,185,129,.1); }  .fi-green svg{ stroke:#10b981; }
+.fi-indigo{background:rgba(99,102,241,.1);}   .fi-indigo svg{stroke:#6366f1;}
+.fi-red{   background:rgba(244,63,94,.1);}    .fi-red svg{   stroke:#f43f5e;}
+.fi-amber{ background:rgba(245,158,11,.1);}   .fi-amber svg{ stroke:#f59e0b;}
+.fi-sky{   background:rgba(14,165,233,.1);}   .fi-sky svg{   stroke:#0ea5e9;}
+.fi-violet{background:rgba(139,92,246,.1);}   .fi-violet svg{stroke:#8b5cf6;}
+
+.feat-name{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:15px;font-weight:700;color:#111;
+  margin-bottom:8px;letter-spacing:-.025em;
+}
+.feat-desc{font-size:13.5px;color:var(--sub);line-height:1.7;flex:1;}
+.feat-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px;}
+.ftag{
+  font-size:10.5px;font-weight:600;padding:3px 9px;
+  border-radius:100px;border:1px solid rgba(0,0,0,.08);
+  color:#888;background:rgba(0,0,0,.03);
+}
+
+/* ═══════════════════════════════════════════════
+   ANALYTICS
+═══════════════════════════════════════════════ */
+.analytics-sec{padding:110px 0;background:#fff;}
+.analytics-inner{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;}
+.a-mockup{
+  background:#fff;border:1px solid var(--border);
+  border-radius:24px;padding:26px;
+  box-shadow:0 8px 40px rgba(0,0,0,.07);
+  position:relative;
+}
+.a-mockup::before{content:'';position:absolute;inset:-1px;border-radius:inherit;background:linear-gradient(135deg,rgba(16,185,129,.07),transparent 55%);z-index:-1;}
+.a-title{font-size:11px;font-weight:700;color:#bbb;margin-bottom:18px;letter-spacing:.06em;text-transform:uppercase;}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:96px;}
+.ba-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.ba-bar{width:100%;border-radius:4px 4px 0 0;transition:opacity .2s;}
+.ba-bar:hover{opacity:.75;}
+.ba-lbl{font-size:9px;color:#ccc;font-family:'JetBrains Mono',monospace;}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px;}
+.mm{background:#f7f7f7;border:1px solid rgba(0,0,0,.07);border-radius:9px;padding:10px 13px;}
+.mm-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#bbb;}
+.mm-val{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600;margin-top:3px;}
+.g{color:var(--green);}
+.b{color:var(--indigo);}
+.r{color:var(--red);}
+.w{color:#111;}
+.rdist{margin-top:18px;}
+.rdist-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#bbb;margin-bottom:9px;}
+.rdist-bars{display:flex;align-items:flex-end;gap:5px;height:60px;}
+.rdb{border-radius:3px 3px 0 0;flex:1;}
+.check-list{margin-top:24px;display:flex;flex-direction:column;gap:13px;}
+.check-row{display:flex;gap:12px;}
+.check-ico{width:18px;height:18px;border-radius:50%;background:rgba(16,185,129,.1);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.check-ico svg{width:9px;height:9px;stroke:var(--green);stroke-width:2.5;fill:none;}
+.check-txt{font-size:14px;color:var(--sub);line-height:1.65;}
+.check-txt strong{color:#111;font-weight:600;}
+
+/* ═══════════════════════════════════════════════
+   PSYCHOLOGY
+═══════════════════════════════════════════════ */
+.psych-sec{padding:110px 0;background:var(--page);}
+.psych-inner{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;}
+.psych-mockup{background:#fff;border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:0 8px 40px rgba(0,0,0,.07);}
+.pm-title{font-size:12px;font-weight:700;color:#111;margin-bottom:16px;letter-spacing:-.02em;}
+.mood-day{
+  background:#f7f7f7;border:1px solid rgba(0,0,0,.06);
+  border-radius:11px;padding:11px 13px;
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;
+}
+.mdc-date{font-size:9.5px;color:#bbb;font-weight:600;}
+.mdc-label{font-size:11.5px;font-weight:600;color:#222;margin-top:2px;}
+.state-tags{display:flex;gap:3px;}
+.stag{font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:100px;}
+.st-g{background:rgba(16,185,129,.1);color:var(--green);}
+.st-r{background:rgba(244,63,94,.1);color:var(--red);}
+.st-i{background:rgba(99,102,241,.1);color:var(--indigo);}
+.st-a{background:rgba(245,158,11,.1);color:var(--amber);}
+.score-circle{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:600;}
+.sc-g{background:rgba(16,185,129,.1);color:var(--green);}
+.sc-r{background:rgba(244,63,94,.1);color:var(--red);}
+.sc-a{background:rgba(245,158,11,.1);color:var(--amber);}
+.mistake-card{background:rgba(244,63,94,.04);border:1px solid rgba(244,63,94,.18);border-radius:11px;padding:13px;margin-top:4px;}
+.mc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.mc-cat{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--red);}
+.mc-impact{font-size:8.5px;font-weight:800;padding:2px 7px;border-radius:100px;background:rgba(244,63,94,.1);color:var(--red);}
+.mc-text{font-size:11px;color:#777;line-height:1.55;}
+.mc-lesson{font-size:10px;color:var(--green);margin-top:6px;font-style:italic;display:flex;align-items:flex-start;gap:4px;}
+.psych-quote{background:rgba(16,185,129,.04);border-left:3px solid var(--green);border-radius:0 11px 11px 0;padding:16px 20px;margin-top:28px;}
+.pq-text{font-size:14.5px;line-height:1.7;color:var(--sub);font-style:italic;}
+.pq-author{margin-top:9px;font-size:12px;font-weight:700;color:#999;}
+
+/* ═══════════════════════════════════════════════
+   HOW IT WORKS
+═══════════════════════════════════════════════ */
+.how-sec{padding:110px 0;background:#fff;}
+.steps{margin-top:56px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.step-card{
+  background:#fff;border:1px solid var(--border);
+  border-radius:20px;padding:32px;
+  transition:border-color .3s,transform .3s,box-shadow .3s;
+}
+.step-card:hover{border-color:rgba(16,185,129,.3);transform:translateY(-4px);box-shadow:0 14px 36px rgba(0,0,0,.08);}
+.step-num{width:44px;height:44px;background:#111;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;letter-spacing:-.03em;}
+.step-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:16.5px;font-weight:700;color:#111;margin-bottom:10px;letter-spacing:-.03em;}
+.step-desc{font-size:13.5px;color:var(--sub);line-height:1.7;}
+
+/* ═══════════════════════════════════════════════
+   COMPARISON
+═══════════════════════════════════════════════ */
+.compare-sec{padding:110px 0;background:var(--page);}
+.compare-table{margin-top:52px;border:1px solid rgba(0,0,0,.09);border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.05);}
+.ct-head{display:grid;grid-template-columns:2fr 1fr 1fr;background:#f7f7f7;border-bottom:1px solid rgba(0,0,0,.07);}
+.ct-h{padding:16px 26px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#bbb;}
+.ct-h.ours{color:var(--green);border-top:2px solid var(--green);}
+.ct-row{display:grid;grid-template-columns:2fr 1fr 1fr;border-bottom:1px solid rgba(0,0,0,.04);transition:background .15s;}
+.ct-row:last-child{border-bottom:none;}
+.ct-row:hover{background:#fafafa;}
+.ct-c{padding:14px 26px;font-size:13px;color:#777;display:flex;align-items:center;gap:7px;}
+.ct-c.feat{font-weight:500;color:#333;}
+.ct-c.ours{background:rgba(16,185,129,.025);}
+.tick{color:var(--green);font-size:15px;font-weight:700;}
+.cross{color:#ddd;font-size:15px;}
+.partial{color:var(--amber);font-size:12px;font-weight:600;}
+
+/* ═══════════════════════════════════════════════
+   TESTIMONIALS
+═══════════════════════════════════════════════ */
+.testi-sec{padding:110px 0;background:#fff;}
+.testi-grid{margin-top:52px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.testi-card{
+  background:#f7f7f7;border:1px solid rgba(0,0,0,.07);
+  border-radius:20px;padding:30px;
+  transition:border-color .3s,transform .3s,box-shadow .3s;
+}
+.testi-card:hover{border-color:rgba(16,185,129,.3);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.08);}
+.stars{color:var(--amber);font-size:13px;letter-spacing:2px;margin-bottom:14px;}
+.testi-text{font-size:14px;line-height:1.7;color:#666;}
+.testi-author{display:flex;align-items:center;gap:11px;margin-top:20px;padding-top:18px;border-top:1px solid rgba(0,0,0,.07);}
+.t-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;color:#fff;}
+.t-name{font-size:13px;font-weight:700;color:#111;}
+.t-role{font-size:11px;color:#bbb;margin-top:1px;}
+
+/* ═══════════════════════════════════════════════
+   PRICING
+═══════════════════════════════════════════════ */
+.pricing-sec{padding:110px 0;background:var(--page);}
+
+.pricing-cards{margin-top:52px;display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:780px;margin-left:auto;margin-right:auto;}
+.plan-card{background:#fff;border:1px solid var(--border);border-radius:24px;padding:34px;position:relative;transition:border-color .3s,transform .3s;}
+.plan-card.featured{border-color:rgba(16,185,129,.4);box-shadow:0 0 0 3px rgba(16,185,129,.07),0 12px 40px rgba(0,0,0,.08);}
+.pop-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 14px;border-radius:0 0 9px 9px;}
+.plan-tier{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#bbb;margin-bottom:6px;}
+.plan-tier.pro{color:var(--green);}
+.plan-desc{font-size:13px;color:#888;margin-bottom:24px;line-height:1.55;}
+.plan-price{display:flex;align-items:baseline;gap:1px;margin-bottom:5px;}
+.price-sym{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:600;color:#111;}
+.price-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:52px;font-weight:800;letter-spacing:-.04em;color:#111;line-height:1;}
+.price-period{font-size:12.5px;color:#bbb;margin-left:3px;}
+.plan-cta{width:100%;padding:12px;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.02em;cursor:pointer;margin:20px 0 24px;transition:all .2s;border:none;}
+.cta-outline{background:transparent;border:1px solid rgba(0,0,0,.12);color:#444;}
+.cta-outline:hover{background:#f5f5f5;border-color:rgba(0,0,0,.18);}
+.cta-solid{background:#111;color:#fff;box-shadow:0 3px 14px rgba(0,0,0,.15);}
+.cta-solid:hover{background:#222;transform:translateY(-1px);}
+.pf-row{display:flex;align-items:center;gap:9px;font-size:13px;color:#666;margin-bottom:8px;}
+.pf-check{color:var(--green);font-size:13px;flex-shrink:0;}
+.pf-cross{color:#ccc;font-size:13px;flex-shrink:0;}
+
+/* ═══════════════════════════════════════════════
+   FINAL CTA
+═══════════════════════════════════════════════ */
+.final-cta{
+  padding:110px 32px;background:#111;
+  text-align:center;position:relative;overflow:hidden;
+}
+.final-cta::before{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:700px;height:400px;
+  background:radial-gradient(ellipse,rgba(16,185,129,.12),transparent 65%);
+  pointer-events:none;
+}
+.fcta-h{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(36px,5vw,64px);font-weight:800;
+  letter-spacing:-.04em;line-height:1.07;color:#fff;
+  max-width:700px;margin:0 auto;position:relative;z-index:1;
+}
+.fcta-h em{font-style:normal;color:var(--green);}
+.fcta-sub{font-size:15px;color:#555;margin-top:16px;margin-bottom:36px;position:relative;z-index:1;}
+.fcta-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#fff;color:#111;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;
+  padding:13px 30px;border-radius:9px;border:none;cursor:pointer;
+  text-decoration:none;position:relative;z-index:1;
+  box-shadow:0 4px 20px rgba(255,255,255,.1);
+  transition:transform .2s,box-shadow .2s;
+}
+.fcta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(255,255,255,.16);}
+.fcta-note{font-size:11.5px;color:#333;margin-top:16px;position:relative;z-index:1;letter-spacing:.03em;}
+
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+footer{background:#0a0a0a;border-top:1px solid rgba(255,255,255,.05);padding:52px 40px 32px;}
+.footer-inner{max-width:1280px;margin:0 auto;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:28px;}
+.footer-brand{display:flex;align-items:center;gap:9px;text-decoration:none;margin-bottom:6px;}
+.footer-brand-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:14.5px;font-weight:700;color:#fff;}
+.footer-brand-name span{color:#444;font-weight:400;}
+.footer-tagline{font-size:12px;color:#444;margin-top:3px;}
+.footer-links{display:flex;gap:24px;flex-wrap:wrap;}
+.footer-links a{font-size:13px;color:#555;text-decoration:none;transition:color .2s;}
+.footer-links a:hover{color:#fff;}
+.footer-copy{border-top:1px solid rgba(255,255,255,.05);margin-top:32px;padding-top:22px;max-width:1280px;margin-left:auto;margin-right:auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.footer-copy span{font-size:11px;color:#333;letter-spacing:.03em;}
+.footer-copy a{font-size:11px;color:#333;text-decoration:none;transition:color .2s;}
+.footer-copy a:hover{color:#666;}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media(max-width:900px){
+  .nav-links{display:none;}
+  .mockup-body{height:320px;}
+  .mock-left{width:160px;}
+  .feat-grid{grid-template-columns:1fr 1fr;}
+  .analytics-inner,.psych-inner{grid-template-columns:1fr;}
+  .steps{grid-template-columns:1fr;}
+  .testi-grid{grid-template-columns:1fr;}
+  .pricing-cards{grid-template-columns:1fr;max-width:440px;}
+  .compare-sec{display:none;}
+}
+@media(max-width:600px){
+  .hero{padding:110px 16px 56px;}
+  .container{padding:0 20px;}
+  .mockup-body{height:240px;}
+  .mock-left{display:none;}
+  .mc-row4{grid-template-columns:repeat(2,1fr);}
+  .feat-grid{grid-template-columns:1fr;}
+  .stats-bar-inner{grid-template-columns:repeat(2,1fr);gap:28px;}
+  .sb-item+.sb-item::before{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-mark">
+        <svg width="18" height="18" viewBox="0 0 100 100" fill="none">
+          <path d="M22 72L50 42l28 30" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M50 42L78 14" stroke="white" stroke-width="11" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="nav-logo-name">TradeFlow <span>Studio</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#analytics">Analytics</a>
+      <a href="#psychology">Psychology</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="btn-ghost-nav" onclick="location.href='https://tradeflowstudioapp.netlify.app'">Login</button>
+      <button class="btn-nav-cta" onclick="location.href='https://tradeflowstudioapp.netlify.app'">Start Free</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero grid-bg">
+  <div class="hero-glow"></div>
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    <span class="hero-badge-text">v1.5 Performance Engine — Now Live</span>
+  </div>
+  <h1>The Journal That<br><em>Builds Your Edge.</em></h1>
+  <p class="hero-sub">Stop guessing which setups work. TradeFlow Studio gives serious traders AI-powered pattern analysis, institutional-grade analytics, and a psychology engine — all in one place.</p>
+  <div class="hero-ctas">
+    <a href="https://tradeflowstudioapp.netlify.app" class="btn-primary">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Start Journaling Free
+    </a>
+    <a href="https://youtu.be/AjW6CDzY8-c" target="_blank" class="btn-secondary">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Watch Demo
+    </a>
+  </div>
+  <p class="hero-proof">Trusted by traders in 30+ countries · Stocks · Forex · Futures · No credit card required</p>
+
+  <!-- DASHBOARD MOCKUP -->
+  <div class="mockup-wrap">
+    <div class="mockup-glow"></div>
+    <div class="mockup-frame" id="dash-mockup">
+      <div class="mockup-chrome">
+        <div class="chrome-dots">
+          <div class="chrome-dot" style="background:#ff5f57"></div>
+          <div class="chrome-dot" style="background:#ffbd2e"></div>
+          <div class="chrome-dot" style="background:#28ca41"></div>
+        </div>
+        <div class="chrome-url">app.tradeflowstudio.com/performance</div>
+        <div style="width:52px"></div>
+      </div>
+
+      <div class="mockup-body">
+        <!-- Sidebar -->
+        <div class="mock-sidebar">
+          <div class="sidebar-logo">
+            <svg width="16" height="16" viewBox="0 0 100 100" fill="none">
+              <path d="M22 72L50 42l28 30" stroke="black" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M50 42L78 14" stroke="black" stroke-width="11" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <button class="sidebar-btn act"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+          <button class="sidebar-btn"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></button>
+          <button class="sidebar-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+          <button class="sidebar-btn"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>
+          <button class="sidebar-btn"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 01-2 2H10a2 2 0 01-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 017-7z"/></svg></button>
+          <div class="sb-spacer"></div>
+          <div class="sb-bottom">
+            <button class="sidebar-btn"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></button>
+            <button class="sidebar-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+            <button class="sidebar-btn" style="background:rgba(244,63,94,.08)"><svg viewBox="0 0 24 24" style="stroke:#f43f5e"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+          </div>
+        </div>
+
+        <!-- Left panel -->
+        <div class="mock-left">
+          <div class="mlp-profile">
+            <div class="mlp-avatar">JM</div>
+            <div>
+              <div class="mlp-name">James Mercer</div>
+              <div class="mlp-email">james@tradeflowstudio.com</div>
+            </div>
+          </div>
+          <div class="mlp-sec">Active Scope <span class="mlp-sec-sw">SWITCH</span></div>
+          <div class="mlp-acct-row">
+            <div class="mlp-acct-name"><div class="mlp-acct-dot"></div> Overall Portfolio</div>
+            <div class="mlp-acct-badge" id="d-pct">+0.00%</div>
+          </div>
+          <div class="mlp-pval" id="d-pnl">$0</div>
+          <div class="mlp-today" id="d-today">TODAY +$0</div>
+          <div class="mlp-divider"></div>
+          <div class="mlp-sec">Velocity Metrics</div>
+          <div class="mlp-metric-row">
+            <div class="mlp-metric-card"><div class="mlp-metric-lbl">Today</div><div class="mlp-metric-val">4 Trades</div></div>
+            <div class="mlp-metric-card"><div class="mlp-metric-lbl">Weekly</div><div class="mlp-metric-val">18 Vol.</div></div>
+          </div>
+          <div class="mlp-eff">
+            <div><div class="mlp-eff-lbl">Efficiency</div><div class="mlp-eff-val" id="d-wr">0% Win Rate</div></div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="mlp-divider"></div>
+          <div class="mlp-quote">"The desire for constant action irrespective of underlying conditions is responsible for many losses." — Jesse Livermore</div>
+        </div>
+
+        <!-- Main content -->
+        <div class="mock-main">
+          <div class="mock-topbar">
+            <div>
+              <div class="mock-page-title">Performance</div>
+            </div>
+            <div class="mock-new-entry">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              NEW ENTRY
+            </div>
+          </div>
+
+          <div class="mock-tabs">
+            <div class="mtab act">OVERALL</div>
+            <div class="mtab inact"><div class="mtab-dot"></div> FTMO</div>
+            <div class="mtab inact"><div class="mtab-dot" style="background:#6366f1"></div> LIVE</div>
+          </div>
+
+          <div class="mock-subtitle">Overall Performance</div>
+
+          <!-- Row 1: 4 stat cards -->
+          <div class="mc-row4">
+            <div class="perf-card">
+              <div class="pc-lbl">Return</div>
+              <div class="pc-val green" id="pc-ret">0%</div>
+              <div class="pc-sub">Current Liquidity</div>
+            </div>
+            <div class="perf-card">
+              <div class="pc-lbl">Win Rate</div>
+              <div class="pc-val" id="pc-wr" style="color:#111">0%</div>
+              <div class="pc-sub">24 Wins Recorded</div>
+            </div>
+            <div class="perf-card">
+              <div class="pc-lbl">Avg Reward</div>
+              <div class="pc-val green" id="pc-rwd">0%</div>
+              <div class="pc-sub">Expected Value</div>
+            </div>
+            <div class="perf-card">
+              <div class="pc-lbl">Streak <span class="pc-badge-dd">DD</span></div>
+              <div class="pc-val red">3</div>
+              <div class="pc-sub">Drawdown</div>
+            </div>
+          </div>
+
+          <!-- Row 2: 3 wider cards -->
+          <div class="mc-row3">
+            <div class="perf-card">
+              <div class="pc-lbl">Profit Factor <span class="pc-badge-good">GOOD</span></div>
+              <div class="pc-val green" id="pc-pf">0</div>
+              <div class="pc-sub">Gross Profit / Gross Loss</div>
+            </div>
+            <div class="perf-card">
+              <div class="pc-lbl">Expectancy</div>
+              <div class="pc-val green" id="pc-exp">0%</div>
+              <div class="pc-sub">Expected Per Trade</div>
+            </div>
+            <div class="perf-card">
+              <div class="pc-lbl">Total Trades</div>
+              <div class="pc-val" id="pc-tt" style="color:#111">0</div>
+              <div class="pc-sub">28 Wins | 8 Losses</div>
+            </div>
+          </div>
+
+          <!-- Row 3: Charts -->
+          <div class="chart-row">
+            <div class="chart-card">
+              <div class="cc-lbl">Equity Progress (Percent)</div>
+              <div style="flex:1;min-height:0">
+                <svg width="100%" height="100%" viewBox="0 0 520 120" preserveAspectRatio="none" style="display:block">
+                  <line x1="0" y1="30" x2="520" y2="30" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+                  <line x1="0" y1="65" x2="520" y2="65" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+                  <line x1="0" y1="100" x2="520" y2="100" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+                  <path class="eq-path"
+                    d="M0,112 C40,110 80,105 120,90 C160,74 190,52 240,36 C280,22 310,18 360,18 C400,18 430,22 470,24 C495,25 510,26 520,28"/>
+                  <circle class="eq-dot" cx="520" cy="28" r="3.5" fill="#111"/>
+                  <circle class="eq-dot" cx="520" cy="28" r="8" fill="#111" opacity="0.12"/>
+                </svg>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="cc-lbl">Weekday Bias (Percent)</div>
+              <div class="wday-bars">
+                <div class="wday-group"><div class="wday-bar" id="wd0" style="height:12px;background:rgba(16,185,129,.25)"></div><div class="wday-lbl">Sun</div></div>
+                <div class="wday-group"><div class="wday-bar" id="wd1" style="height:42px;background:#10b981"></div><div class="wday-lbl">Mon</div></div>
+                <div class="wday-group"><div class="wday-bar" id="wd2" style="height:70px;background:#10b981"></div><div class="wday-lbl">Tue</div></div>
+                <div class="wday-group"><div class="wday-bar" id="wd3" style="height:26px;background:rgba(16,185,129,.45)"></div><div class="wday-lbl">Wed</div></div>
+                <div class="wday-group"><div class="wday-bar" id="wd4" style="height:8px;background:rgba(244,63,94,.3)"></div><div class="wday-lbl">Thu</div></div>
+                <div class="wday-group"><div class="wday-bar" id="wd5" style="height:16px;background:rgba(16,185,129,.35)"></div><div class="wday-lbl">Fri</div></div>
+                <div class="wday-group"><div class="wday-bar" id="wd6" style="height:4px;background:rgba(0,0,0,.1)"></div><div class="wday-lbl">Sat</div></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /mock-main -->
+      </div><!-- /mockup-body -->
+    </div><!-- /mockup-frame -->
+  </div><!-- /mockup-wrap -->
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-bar-inner">
+    <div class="sb-item reveal"><div class="sb-num"><span class="sb-counter" data-target="10000">0</span><span class="acc">+</span></div><div class="sb-lbl">Trades Processed</div></div>
+    <div class="sb-item reveal d1"><div class="sb-num"><span class="sb-counter" data-target="3">0</span></div><div class="sb-lbl">Asset Classes</div></div>
+    <div class="sb-item reveal d2"><div class="sb-num"><span class="sb-counter" data-target="30">0</span></div><div class="sb-lbl">Countries Served</div></div>
+    <div class="sb-item reveal d3"><div class="sb-num"><span class="sb-counter" data-target="100">0</span><span class="acc">%</span></div><div class="sb-lbl">Cloud Synced</div></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features-sec" id="features">
+  <div class="container">
+    <div class="reveal">
+      <div class="eyebrow"><span class="eyebrow-line"></span> Everything You Need</div>
+      <h2 class="sec-h">A complete trading<br><em>operating system.</em></h2>
+      <p class="sec-p">Every tool a serious trader needs — from detailed execution logging to behavioral analytics — in one cohesive, professional platform.</p>
+    </div>
+
+    <div class="feat-grid">
+
+      <!-- 1. Advanced Analytics -->
+      <div class="feat-card reveal d1">
+        <div class="feat-icon fi-green">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><rect x="1" y="19" width="22" height="1" fill="#10b981" stroke="none" rx=".5"/></svg>
+        </div>
+        <div class="feat-name">Advanced Analytics Engine</div>
+        <div class="feat-desc">Drill into every dimension of your performance — win rate by setup type, time of day, market session, and asset class. Equity curves, R-multiple distributions, and profit factor breakdowns.</div>
+        <div class="feat-tags"><span class="ftag">Equity Curve</span><span class="ftag">R-Multiple</span><span class="ftag">Setup Analysis</span><span class="ftag">Profit Factor</span></div>
+      </div>
+
+      <!-- 2. Psychology Tracker -->
+      <div class="feat-card reveal d2">
+        <div class="feat-icon fi-indigo">
+          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3.1-2 5.7-4.8 6.6V18a2 2 0 01-2 2H12a2 2 0 01-2-2v-2.4A7.007 7.007 0 015 9a7 7 0 017-7z"/><line x1="9.5" y1="21" x2="14.5" y2="21"/></svg>
+        </div>
+        <div class="feat-name">Psychology Tracker</div>
+        <div class="feat-desc">Pre and post-trade mood scoring, emotional state tagging, and behavioral plan adherence. Identify which mental states correlate with your drawdowns.</div>
+        <div class="feat-tags"><span class="ftag">Mood Score</span><span class="ftag">State Correlation</span><span class="ftag">Mistake Log</span></div>
+      </div>
+
+      <!-- 3. AI Insights -->
+      <div class="feat-card reveal d3">
+        <div class="feat-icon fi-amber">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div class="feat-name">AI-Powered Insights</div>
+        <div class="feat-desc">Google Gemini analyzes your journal to surface pattern deviations and behavioral loops. Get personalized setup recommendations built from your own data.</div>
+        <div class="feat-tags"><span class="ftag">Gemini AI</span><span class="ftag">Pattern Recognition</span></div>
+      </div>
+
+      <!-- 4. Execution Tracker -->
+      <div class="feat-card reveal d1">
+        <div class="feat-icon fi-red">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="feat-name">Execution Tracker</div>
+        <div class="feat-desc">Log multiple partial entries and exits per trade with automatic average price calculation and per-leg fee tracking. Know your true cost basis.</div>
+        <div class="feat-tags"><span class="ftag">Multi-leg</span><span class="ftag">Avg Price</span><span class="ftag">Fee Tracking</span></div>
+      </div>
+
+      <!-- 5. Multi-Account Manager -->
+      <div class="feat-card reveal d2">
+        <div class="feat-icon fi-sky">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="feat-name">Multi-Account Manager</div>
+        <div class="feat-desc">Manage live, prop firm, and demo accounts in isolated environments. Each has its own equity curve, metrics, and independent balance tracking.</div>
+        <div class="feat-tags"><span class="ftag">Live Accounts</span><span class="ftag">Prop Firm</span><span class="ftag">Demo</span></div>
+      </div>
+
+      <!-- 6. Secure Cloud Sync -->
+      <div class="feat-card reveal d3">
+        <div class="feat-icon fi-green">
+          <svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>
+        </div>
+        <div class="feat-name">Secure Cloud Sync</div>
+        <div class="feat-desc">Built on Supabase with Row-Level Security — your data is encrypted at the database level. Includes Google Sheets sync and real-time cross-device updates.</div>
+        <div class="feat-tags"><span class="ftag">RLS Security</span><span class="ftag">Sheets Sync</span></div>
+      </div>
+
+      <!-- 7. Trade Calendar -->
+      <div class="feat-card reveal d1">
+        <div class="feat-icon fi-violet">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="7" y="14" width="3" height="3" rx=".5" fill="currentColor" stroke="none"/><rect x="14" y="14" width="3" height="3" rx=".5" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <div class="feat-name">Trade Calendar</div>
+        <div class="feat-desc">Monthly calendar with daily P&amp;L heat mapping. Spot your best and worst trading days and weekly performance cycles at a single glance.</div>
+        <div class="feat-tags"><span class="ftag">P&amp;L Heat Map</span><span class="ftag">Daily Review</span></div>
+      </div>
+
+      <!-- 8. Professional Trade Log -->
+      <div class="feat-card reveal d2">
+        <div class="feat-icon fi-indigo">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div class="feat-name">Professional Trade Log</div>
+        <div class="feat-desc">The most comprehensive entry form — symbol, side, asset type, entry/exit, grade (A+/A/B/C), setup classification, chart links, custom tags, and full trade narratives. Filter your entire library by any tag instantly.</div>
+        <div class="feat-tags"><span class="ftag">Stocks</span><span class="ftag">Forex</span><span class="ftag">Futures</span><span class="ftag">Trade Grading</span><span class="ftag">Tag Filtering</span><span class="ftag">CSV Export</span></div>
+      </div>
+
+      <!-- 9. Smart Tag Filtering -->
+      <div class="feat-card reveal d3">
+        <div class="feat-icon fi-violet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </div>
+        <div class="feat-name">Smart Tag Filtering</div>
+        <div class="feat-desc">Tag every trade with custom labels — setups, sessions, mistakes, instruments. Filter your entire trade library by any tag in one click to isolate exactly the trades you want to study.</div>
+        <div class="feat-tags"><span class="ftag">Custom Tags</span><span class="ftag">One-Click Filter</span><span class="ftag">Setup Labels</span><span class="ftag">Pattern Isolation</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ANALYTICS DEEP DIVE -->
+<section class="analytics-sec" id="analytics">
+  <div class="container">
+    <div class="analytics-inner">
+      <div class="a-mockup reveal">
+        <div class="a-title">Performance by Setup Grade</div>
+        <div class="bar-chart">
+          <div class="ba-group"><div class="ba-bar" style="height:94px;background:linear-gradient(180deg,#10b981,#059669)"></div><div class="ba-lbl">A+</div></div>
+          <div class="ba-group"><div class="ba-bar" style="height:74px;background:linear-gradient(180deg,#10b981,#059669);opacity:.8"></div><div class="ba-lbl">A</div></div>
+          <div class="ba-group"><div class="ba-bar" style="height:46px;background:#ccc"></div><div class="ba-lbl">B</div></div>
+          <div class="ba-group"><div class="ba-bar" style="height:24px;background:linear-gradient(180deg,#f43f5e,#e11d48)"></div><div class="ba-lbl">C</div></div>
+        </div>
+        <div class="metric-grid">
+          <div class="mm"><div class="mm-lbl">Best Day</div><div class="mm-val g">+$1,240</div></div>
+          <div class="mm"><div class="mm-lbl">Profit Factor</div><div class="mm-val b">2.87</div></div>
+          <div class="mm"><div class="mm-lbl">Max Drawdown</div><div class="mm-val r">-$620</div></div>
+          <div class="mm"><div class="mm-lbl">Avg Win</div><div class="mm-val g">$284</div></div>
+        </div>
+        <div class="rdist">
+          <div class="rdist-lbl">R-Multiple Distribution</div>
+          <div class="rdist-bars">
+            <div class="rdb" style="height:20px;background:rgba(244,63,94,.6)"></div>
+            <div class="rdb" style="height:32px;background:rgba(244,63,94,.4)"></div>
+            <div class="rdb" style="height:15px;background:#ddd"></div>
+            <div class="rdb" style="height:38px;background:rgba(16,185,129,.5)"></div>
+            <div class="rdb" style="height:58px;background:#10b981"></div>
+            <div class="rdb" style="height:48px;background:rgba(16,185,129,.75)"></div>
+            <div class="rdb" style="height:34px;background:rgba(99,102,241,.6)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal d2">
+        <div class="eyebrow"><span class="eyebrow-line"></span> Deep Analytics</div>
+        <h2 class="sec-h">Know <em>exactly</em><br>where your edge lives.</h2>
+        <p class="sec-p">Most traders lose because they don't know which setups actually work. TradeFlow breaks down every variable so you can eliminate what doesn't work — and double down on what does.</p>
+        <div class="check-list">
+          <div class="check-row"><div class="check-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-txt"><strong>Setup type performance</strong> — See which of your A, B, C setups carry positive expectancy</div></div>
+          <div class="check-row"><div class="check-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-txt"><strong>Time of day analysis</strong> — Discover your peak performance windows and sessions to avoid</div></div>
+          <div class="check-row"><div class="check-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-txt"><strong>R-multiple distribution</strong> — Visualize your risk-adjusted returns across all trades</div></div>
+          <div class="check-row"><div class="check-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-txt"><strong>Mistake cost analysis</strong> — Quantify exactly how much emotional trading is costing you</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PSYCHOLOGY -->
+<section class="psych-sec" id="psychology">
+  <div class="container">
+    <div class="psych-inner">
+      <div class="reveal">
+        <div class="eyebrow"><span class="eyebrow-line"></span> Psychology Tracker</div>
+        <h2 class="sec-h">Your mindset<br>is <em>your edge.</em></h2>
+        <p class="sec-p">90% of trading failures trace back to psychology, not strategy. TradeFlow is the only journal that quantifies your emotional state and links it directly to your P&amp;L outcomes.</p>
+        <div class="check-list" style="margin-top:22px">
+          <div class="check-row"><div class="check-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-txt"><strong>Pre &amp; post-trade mood scoring</strong> — 1–10 scale per session, tracked over time</div></div>
+          <div class="check-row"><div class="check-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-txt"><strong>Emotional state tagging</strong> — FOMO, revenge, overconfident, disciplined</div></div>
+          <div class="check-row"><div class="check-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-txt"><strong>Mistake journal</strong> — Log each error with impact level and lessons learned</div></div>
+          <div class="check-row"><div class="check-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-txt"><strong>Plan adherence tracking</strong> — Measure "Did you follow your plan?" as a metric over time</div></div>
+        </div>
+        <div class="psych-quote">
+          <div class="pq-text">"Trading is not about being right. It is about a process of identifying and managing probabilities."</div>
+          <div class="pq-author">— Mark Douglas, Trading in the Zone</div>
+        </div>
+      </div>
+      <div class="psych-mockup reveal d2">
+        <div class="pm-title">Psychology Journal — This Week</div>
+        <div class="mood-day"><div><div class="mdc-date">Mon, Feb 10</div><div class="mdc-label">Morning session</div></div><div style="display:flex;align-items:center;gap:8px"><div class="state-tags"><span class="stag st-g">Disciplined</span><span class="stag st-i">Confident</span></div><div class="score-circle sc-g">8.5</div></div></div>
+        <div class="mood-day"><div><div class="mdc-date">Tue, Feb 11</div><div class="mdc-label">Afternoon session</div></div><div style="display:flex;align-items:center;gap:8px"><div class="state-tags"><span class="stag st-r">FOMO</span><span class="stag st-a">Revenge</span></div><div class="score-circle sc-r">4.2</div></div></div>
+        <div class="mood-day"><div><div class="mdc-date">Wed, Feb 12</div><div class="mdc-label">Full day</div></div><div style="display:flex;align-items:center;gap:8px"><div class="state-tags"><span class="stag st-g">Disciplined</span></div><div class="score-circle sc-g">9.1</div></div></div>
+        <div class="mood-day"><div><div class="mdc-date">Thu, Feb 13</div><div class="mdc-label">Morning session</div></div><div style="display:flex;align-items:center;gap:8px"><div class="state-tags"><span class="stag st-i">Confident</span></div><div class="score-circle sc-a">6.8</div></div></div>
+        <div class="mistake-card">
+          <div class="mc-header"><div class="mc-cat">⚠ Overtrading</div><div class="mc-impact">HIGH IMPACT</div></div>
+          <div class="mc-text">Took 3 extra trades after daily loss limit hit on EURUSD — classic revenge pattern. Estimated cost: <strong style="color:var(--red)">-$480</strong></div>
+          <div class="mc-lesson">💡 Set hard daily stop at -1R. Close platform immediately. No exceptions.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-sec">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="eyebrow" style="justify-content:center"><span class="eyebrow-line"></span> Simple Process <span class="eyebrow-line"></span></div>
+      <h2 class="sec-h" style="text-align:center;max-width:none">Up and running in <em>minutes.</em></h2>
+    </div>
+    <div class="steps">
+      <div class="step-card reveal d1"><div class="step-num">1</div><div class="step-title">Log your trades</div><div class="step-desc">Enter your trade details in under 60 seconds. Symbol, side, entry/exit prices, grade, setup type, and narrative. Attach chart screenshots directly from your browser.</div></div>
+      <div class="step-card reveal d2"><div class="step-num">2</div><div class="step-title">Analyze your patterns</div><div class="step-desc">Your analytics dashboard updates in real time. Let Gemini AI scan your journal and surface patterns you'd never spot manually.</div></div>
+      <div class="step-card reveal d3"><div class="step-num">3</div><div class="step-title">Fix mistakes, grow your edge</div><div class="step-desc">Quantify the cost of every trading error. Watch your win rate and R:R climb as you systematically eliminate bad habits.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="compare-sec">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="eyebrow" style="justify-content:center"><span class="eyebrow-line"></span> The Difference</div>
+      <h2 class="sec-h" style="text-align:center;max-width:none">Why traders choose <em>TradeFlow.</em></h2>
+    </div>
+    <div class="compare-table reveal d1">
+      <div class="ct-head"><div class="ct-h">Feature</div><div class="ct-h ours">TradeFlow Studio</div><div class="ct-h">Other Journals</div></div>
+      <div class="ct-row"><div class="ct-c feat">Detailed Trade Log (Grade, Setup, Narrative)</div><div class="ct-c ours"><span class="tick">✓</span> Full support</div><div class="ct-c"><span class="partial">~ </span>Basic only</div></div>
+      <div class="ct-row"><div class="ct-c feat">Psychology &amp; Mood Tracking</div><div class="ct-c ours"><span class="tick">✓</span> Built-in</div><div class="ct-c"><span class="cross">✗</span> Not available</div></div>
+      <div class="ct-row"><div class="ct-c feat">AI-Powered Insights (Gemini)</div><div class="ct-c ours"><span class="tick">✓</span> Included</div><div class="ct-c"><span class="cross">✗</span> Not available</div></div>
+      <div class="ct-row"><div class="ct-c feat">Multi-Account Management</div><div class="ct-c ours"><span class="tick">✓</span> Unlimited</div><div class="ct-c"><span class="partial">~</span> Paid add-on</div></div>
+      <div class="ct-row"><div class="ct-c feat">Execution-Level Partial Tracking</div><div class="ct-c ours"><span class="tick">✓</span> Full support</div><div class="ct-c"><span class="cross">✗</span> Not available</div></div>
+      <div class="ct-row"><div class="ct-c feat">Google Sheets Sync</div><div class="ct-c ours"><span class="tick">✓</span> Built-in</div><div class="ct-c"><span class="partial">~</span> Manual only</div></div>
+      <div class="ct-row"><div class="ct-c feat">Stocks, Forex &amp; Futures</div><div class="ct-c ours"><span class="tick">✓</span> All 3 classes</div><div class="ct-c"><span class="partial">~</span> Stocks only</div></div>
+      <div class="ct-row"><div class="ct-c feat" style="color:#111;font-weight:600">Starting price</div><div class="ct-c ours" style="color:var(--green);font-weight:700;font-family:'JetBrains Mono',monospace">Free forever</div><div class="ct-c" style="color:#bbb;font-family:'JetBrains Mono',monospace">$29/month</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testi-sec">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="eyebrow" style="justify-content:center"><span class="eyebrow-line"></span> Trader Feedback</div>
+      <h2 class="sec-h" style="text-align:center;max-width:none">Built for traders,<br><em>by a trader.</em></h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card reveal d1">
+        <div class="stars">★★★★★</div>
+        <div class="testi-text">"The psychology tracker changed how I approach every session. I realised I was giving back 30% of my profits on revenge trades. Now I can see the pattern and stop before it starts."</div>
+        <div class="testi-author"><div class="t-avatar" style="background:linear-gradient(135deg,#10b981,#059669)">MK</div><div><div class="t-name">Marcus K.</div><div class="t-role">Futures Trader · Chicago, IL</div></div></div>
+      </div>
+      <div class="testi-card reveal d2">
+        <div class="stars">★★★★★</div>
+        <div class="testi-text">"Finally a journal that understands prop traders. Managing three funded accounts is completely seamless. The execution tracker for partial fills is exactly what I needed."</div>
+        <div class="testi-author"><div class="t-avatar" style="background:linear-gradient(135deg,#818cf8,#6366f1)">SR</div><div><div class="t-name">Sofia R.</div><div class="t-role">Prop Trader · London, UK</div></div></div>
+      </div>
+      <div class="testi-card reveal d3">
+        <div class="stars">★★★★★</div>
+        <div class="testi-text">"The Gemini AI told me my B-grade Forex setups had negative expectancy. I eliminated them and my win rate jumped 11% in a single month. Worth every penny."</div>
+        <div class="testi-author"><div class="t-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706)">AJ</div><div><div class="t-name">Arjun J.</div><div class="t-role">Forex Trader · Mumbai, IN</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-sec" id="pricing">
+  <div class="container" style="text-align:center">
+    <div class="reveal">
+      <div class="eyebrow" style="justify-content:center"><span class="eyebrow-line"></span> Simple Pricing</div>
+      <h2 class="sec-h" style="text-align:center;max-width:none">Start free.<br><em>Upgrade when ready.</em></h2>
+      <div class="pricing-toggle-wrap" style="justify-content:center;margin-top:8px;">
+        <span style="font-size:12px;color:#aaa;font-weight:500;">Billed monthly · Annual plan coming soon</span>
+      </div>
+    </div>
+    <div class="pricing-cards reveal d1">
+      <div class="plan-card">
+        <div class="plan-tier">Free</div>
+        <div class="plan-desc">For traders building their journaling habit.</div>
+        <div class="plan-price"><div class="price-val">$0</div></div>
+        <button class="plan-cta cta-outline" onclick="location.href='https://tradeflowstudioapp.netlify.app'">Get Started Free</button>
+        <div class="pf-row"><span class="pf-check">✓</span> Up to 15 trades/month</div>
+        <div class="pf-row"><span class="pf-check">✓</span> 1 trading account</div>
+        <div class="pf-row"><span class="pf-check">✓</span> Basic trade log</div>
+        <div class="pf-row"><span class="pf-check">✓</span> Trade calendar view</div>
+        <div class="pf-row"><span class="pf-check">✓</span> Cloud sync</div>
+        <div class="pf-row"><span class="pf-cross">✗</span> AI insights</div>
+        <div class="pf-row"><span class="pf-cross">✗</span> Psychology tracker</div>
+        <div class="pf-row"><span class="pf-cross">✗</span> Advanced analytics</div>
+      </div>
+      <div class="plan-card featured">
+        <div class="pop-badge">Most Popular</div>
+        <div class="plan-tier pro" style="margin-top:14px">Pro</div>
+        <div class="plan-desc">For serious traders building a documented edge.</div>
+        <div class="plan-price"><div class="price-sym">$</div><div class="price-val">8.99</div><div class="price-period">/mo</div></div>
+        <button class="plan-cta cta-solid" onclick="location.href='https://tradeflowstudioapp.netlify.app'">Get Pro — $8.99/mo</button>
+        <div class="pf-row"><span class="pf-check">✓</span> <strong style="color:#111">Unlimited trades</strong></div>
+        <div class="pf-row"><span class="pf-check">✓</span> Unlimited accounts</div>
+        <div class="pf-row"><span class="pf-check">✓</span> Full analytics suite</div>
+        <div class="pf-row"><span class="pf-check">✓</span> <strong style="color:#111">AI insights (Gemini)</strong></div>
+        <div class="pf-row"><span class="pf-check">✓</span> <strong style="color:#111">Psychology tracker</strong></div>
+        <div class="pf-row"><span class="pf-check">✓</span> Execution tracker</div>
+        <div class="pf-row"><span class="pf-check">✓</span> Google Sheets sync</div>
+        <div class="pf-row"><span class="pf-check">✓</span> Priority support</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <h2 class="fcta-h reveal">Your edge starts<br>with <em>your journal.</em></h2>
+  <p class="fcta-sub reveal d1">Join traders in 30+ countries building consistent, documented profitability.</p>
+  <a href="//tradeflowstudioapp.netlify.app" class="fcta-btn reveal d2">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    Get Started — It's Free
+  </a>
+  <p class="fcta-note reveal d3">No credit card required · Cancel anytime · Setup in under 5 minutes</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <a href="#" class="footer-brand">
+        <div class="nav-logo-mark"><svg width="16" height="16" viewBox="0 0 100 100" fill="none"><path d="M22 72L50 42l28 30" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M50 42L78 14" stroke="white" stroke-width="11" stroke-linecap="round"/></svg></div>
+        <span class="footer-brand-name">TradeFlow <span>Studio</span></span>
+      </a>
+      <div class="footer-tagline">Built for traders, by a trader.</div>
+    </div>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#analytics">Analytics</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+  <div class="footer-copy">
+    <span>© 2026 TradeFlow Studio. All rights reserved.</span>
+    <span>Built for traders, by a trader.</span>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+// ── NAV SCROLL ──
+window.addEventListener('scroll', function() {
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// ── SCROLL REVEAL ──
+const revObs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      revObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
+document.querySelectorAll('.reveal').forEach(function(el) { revObs.observe(el); });
+
+// ── STATS COUNTERS ──
+function animCounter(el, target, dur) {
+  const t0 = performance.now();
+  const tick = function(now) {
+    const p = Math.min((now - t0) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = target >= 1000
+      ? Math.floor(ease * target).toLocaleString()
+      : Math.floor(ease * target);
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = target >= 1000 ? target.toLocaleString() : target;
+  };
+  requestAnimationFrame(tick);
+}
+const ctrObs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      animCounter(e.target, parseInt(e.target.dataset.target), 2000);
+      ctrObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('.sb-counter').forEach(function(el) { ctrObs.observe(el); });
+
+// ── DASHBOARD ANIMATION ──
+// IDs that actually exist in the HTML:
+//   Left panel : d-pnl, d-today, d-wr, d-pct
+//   Perf cards : pc-ret, pc-wr, pc-rwd, pc-pf, pc-exp, pc-tt
+//   Bars       : wd0..wd6 (CSS scaleY(0) → add class .anim)
+//   Equity     : .eq-path → add class .animated
+
+let dashDone = false;
+
+// Generic count-up helper
+function countUp(id, target, formatter, delay, dur) {
+  setTimeout(function() {
+    const el = document.getElementById(id);
+    if (!el || el.dataset.done) return;
+    el.dataset.done = '1';
+    const t0 = performance.now();
+    const tick = function(now) {
+      const p = Math.min((now - t0) / dur, 1);
+      const v = (1 - Math.pow(1 - p, 3)) * target;
+      el.textContent = formatter(v, p >= 1);
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, delay);
+}
+
+function runDashAnim() {
+  if (dashDone) return;
+  dashDone = true;
+
+  // 1. Equity curve draws in
+  setTimeout(function() {
+    const path = document.querySelector('.eq-path');
+    if (path) path.classList.add('animated');
+    setTimeout(function() {
+      document.querySelectorAll('.eq-dot').forEach(function(d) {
+        d.classList.add('animated');
+      });
+    }, 1800);
+  }, 300);
+
+  // 2. Weekday bars spring up (CSS handles scaleY via .anim class)
+  ['wd0','wd1','wd2','wd3','wd4','wd5','wd6'].forEach(function(id, i) {
+    setTimeout(function() {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('anim');
+    }, 350 + i * 100);
+  });
+
+  // 3. Left panel counters — IDs: d-pnl, d-today, d-wr, d-pct
+  countUp('d-pnl',   62480, function(v, done) {
+    return '$' + (done ? '62,480' : Math.floor(v).toLocaleString());
+  }, 200, 1800);
+
+  countUp('d-today', 1840, function(v, done) {
+    return 'TODAY  +$' + (done ? '1,840' : Math.floor(v).toLocaleString());
+  }, 300, 1600);
+
+  countUp('d-wr', 68, function(v, done) {
+    return (done ? '68.0' : v.toFixed(1)) + '% Win Rate';
+  }, 400, 1700);
+
+  countUp('d-pct', 12.40, function(v, done) {
+    return '+' + (done ? '12.40' : v.toFixed(2)) + '%';
+  }, 350, 1600);
+
+  // 4. Performance metric cards — IDs: pc-ret, pc-wr, pc-rwd, pc-pf, pc-exp, pc-tt
+  countUp('pc-ret', 12.4, function(v, done) {
+    return (done ? '12.4' : v.toFixed(1)) + '%';
+  }, 500, 1600);
+
+  countUp('pc-wr', 68, function(v, done) {
+    return Math.floor(v) + '%';
+  }, 600, 1600);
+
+  countUp('pc-rwd', 3.8, function(v, done) {
+    return (done ? '3.8' : v.toFixed(1)) + '%';
+  }, 700, 1600);
+
+  countUp('pc-pf', 11.24, function(v, done) {
+    return (done ? '11.24' : v.toFixed(2));
+  }, 550, 1800);
+
+  countUp('pc-exp', 4.12, function(v, done) {
+    return (done ? '4.12' : v.toFixed(2)) + '%';
+  }, 650, 1800);
+
+  countUp('pc-tt', 36, function(v) {
+    return Math.floor(v) + '';
+  }, 750, 1400);
+}
+
+// Observe the dashboard mockup
+// Because it's in the hero (above fold), IntersectionObserver fires almost immediately.
+// Adding a 100ms delay ensures DOM paint is complete before animations start.
+const dashEl = document.getElementById('dash-mockup');
+if (dashEl) {
+  const dashObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        setTimeout(runDashAnim, 100); // small delay ensures paint is done
+        dashObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  dashObs.observe(dashEl);
+}
+
+}); // end DOMContentLoaded
+</script>
+</body>
+</html>
