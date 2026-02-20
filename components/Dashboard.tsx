@@ -4,6 +4,8 @@ import { ICONS } from '../constants';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell } from 'recharts';
 import TradeCalendar from './TradeCalendar';
 
+type DateRange = 'ALL' | 'TODAY' | '7D' | '30D' | 'MTD' | 'YTD';
+
 interface DashboardProps {
   trades: Trade[];
   activeAccount?: Account;
@@ -52,21 +54,49 @@ const KPIBox = React.memo(({ label, value, subtext, pill, color, tooltip }: any)
 
 const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, onTradeEdit, onTradeDelete, displayUnit }) => {
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const [dateRange, setDateRange] = useState<DateRange>('ALL');
 
   const startingEquity = useMemo(() => activeAccount 
     ? activeAccount.initialBalance 
     : accounts.reduce((sum, a) => sum + a.initialBalance, 0), [activeAccount, accounts]);
 
+  const filteredByDateTrades = useMemo(() => {
+    if (dateRange === 'ALL') return trades;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    
+    return trades.filter(t => {
+      const tradeDate = new Date(t.date + 'T12:00:00').getTime();
+      
+      switch (dateRange) {
+        case 'TODAY':
+          return tradeDate === today;
+        case '7D':
+          return tradeDate >= today - (7 * 24 * 60 * 60 * 1000);
+        case '30D':
+          return tradeDate >= today - (30 * 24 * 60 * 60 * 1000);
+        case 'MTD':
+          return new Date(tradeDate).getMonth() === now.getMonth() && new Date(tradeDate).getFullYear() === now.getFullYear();
+        case 'YTD':
+          return new Date(tradeDate).getFullYear() === now.getFullYear();
+        default:
+          return true;
+      }
+    });
+  }, [trades, dateRange]);
+
   const stats = useMemo(() => {
-    if (!trades || trades.length === 0) return null;
+    const currentTrades = filteredByDateTrades;
+    if (!currentTrades || currentTrades.length === 0) return null;
     
-    const sortedTrades = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const winTrades = trades.filter(t => t.pnl > 0);
-    const lossTrades = trades.filter(t => t.pnl < 0);
-    const winRate = (winTrades.length / trades.length) * 100 || 0;
+    const sortedTrades = [...currentTrades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const winTrades = currentTrades.filter(t => t.pnl > 0);
+    const lossTrades = currentTrades.filter(t => t.pnl < 0);
+    const winRate = (winTrades.length / currentTrades.length) * 100 || 0;
     
-    const totalNetPnL = trades.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
-    const avgPnL = totalNetPnL / trades.length;
+    const totalNetPnL = currentTrades.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
+    const avgPnL = totalNetPnL / currentTrades.length;
 
     const formatValue = (pnl: number, trade?: Trade) => {
       switch (displayUnit) {
@@ -95,10 +125,10 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     
     const avgWin = winTrades.length > 0 ? (grossProfit / winTrades.length) : 0;
     const avgLoss = lossTrades.length > 0 ? (grossLoss / lossTrades.length) : 0;
-    const expectancyRaw = ((winTrades.length / trades.length) * avgWin) - ((lossTrades.length / trades.length) * avgLoss);
+    const expectancyRaw = ((winTrades.length / currentTrades.length) * avgWin) - ((lossTrades.length / currentTrades.length) * avgLoss);
     const expectancy = formatValue(expectancyRaw);
 
-    const sortedTradesDesc = [...trades].sort((a, b) => {
+    const sortedTradesDesc = [...currentTrades].sort((a, b) => {
       const timeA = new Date(`${a.date}T${a.entryTime || '00:00'}`).getTime();
       const timeB = new Date(`${b.date}T${b.entryTime || '00:00'}`).getTime();
       return timeB - timeA;
@@ -127,7 +157,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
 
     // Best Setup Logic
     const setups: Record<string, { wins: number, total: number }> = {};
-    trades.forEach(t => {
+    currentTrades.forEach(t => {
       if (!setups[t.setupType]) setups[t.setupType] = { wins: 0, total: 0 };
       setups[t.setupType].total++;
       if (t.pnl > 0) setups[t.setupType].wins++;
@@ -137,8 +167,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
       .sort((a, b) => b.winRate - a.winRate)[0];
 
     // Discipline Logic (followedPlan)
-    const followedPlanCount = trades.filter(t => t.followedPlan === true).length;
-    const disciplineScore = trades.length > 0 ? (followedPlanCount / trades.length) * 100 : 0;
+    const followedPlanCount = currentTrades.filter(t => t.followedPlan === true).length;
+    const disciplineScore = currentTrades.length > 0 ? (followedPlanCount / currentTrades.length) * 100 : 0;
 
     let cumulative = displayUnit === 'CURRENCY' ? startingEquity : 0;
     const equityData = sortedTrades.map((t) => {
@@ -149,7 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
 
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const pnlByDay = days.map((day, idx) => {
-      const dayPnL = trades
+      const dayPnL = currentTrades
         .filter(t => new Date(t.date + 'T12:00:00').getDay() === idx)
         .reduce((sum, t) => sum + formatValue(t.pnl, t), 0);
       return { name: day, pnl: dayPnL };
@@ -180,7 +210,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
       });
     }
 
-    if (disciplineScore < 70 && trades.length >= 5) {
+    if (disciplineScore < 70 && currentTrades.length >= 5) {
       activeAlerts.push({
         id: 'discipline-dip',
         type: 'warning',
@@ -214,7 +244,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     }
 
     return { 
-      total: trades.length, 
+      total: currentTrades.length, 
       wins: winTrades.length, 
       losses: lossTrades.length, 
       winRate, 
@@ -228,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
       unitLabel: getUnitLabel(),
       activeAlerts: activeAlerts.sort((a, b) => b.priority - a.priority).slice(0, 3)
     };
-  }, [trades, activeAccount, accounts, displayUnit, startingEquity]);
+  }, [filteredByDateTrades, activeAccount, accounts, displayUnit, startingEquity]);
 
   const renderTradeDetail = (trade: Trade) => {
     let displayPnL = trade.pnl;
@@ -285,11 +315,25 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
 
   return (
     <div className="space-y-8 sm:space-y-12 pb-12">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col">
           <h2 className="text-xl sm:text-2xl font-black tracking-tighter leading-none">
             {activeAccount?.name || 'Overall Performance'}
           </h2>
+        </div>
+        
+        <div className="flex items-center gap-1 bg-black/5 p-1 rounded-full overflow-x-auto no-scrollbar">
+          {(['ALL', 'TODAY', '7D', '30D', 'MTD', 'YTD'] as DateRange[]).map((range) => (
+            <button
+              key={range}
+              onClick={() => setDateRange(range)}
+              className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+                dateRange === range ? 'bg-black text-white shadow-md' : 'text-black/40 hover:text-black hover:bg-black/5'
+              }`}
+            >
+              {range === 'ALL' ? 'All Time' : range === 'TODAY' ? 'Today' : range}
+            </button>
+          ))}
         </div>
       </div>
 
