@@ -479,16 +479,16 @@ const App: React.FC = () => {
                   <img src={session?.user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${userName}`} alt="Avatar" />
                 </div>
                 <div className="min-w-0">
-                   <h3 className="text-[14px] font-bold text-black truncate max-w-[140px] flex items-center gap-2">
-                      {userName}
+                   <h3 className="text-[14px] font-bold text-black flex items-center gap-2">
+                      <span className="truncate max-w-[100px] sm:max-w-[140px]">{userName}</span>
                       {userPlan === 'pro' && (
-                        <span className="px-2 py-0.5 bg-gradient-to-tr from-black to-slate-800 text-white text-[8px] font-black uppercase tracking-[0.1em] rounded-full shrink-0 shadow-md border border-white/20">PRO</span>
+                        <span className="px-2 py-0.5 bg-black text-white text-[7px] font-black uppercase tracking-[0.1em] rounded-full shrink-0 shadow-md border border-white/10">PRO</span>
                       )}
                    </h3>
                 </div>
               </div>
 
-              <h1 className="hidden lg:block text-2xl font-bold tracking-tight text-black truncate">
+              <h1 className="hidden lg:block text-2xl font-bold tracking-tight text-black">
                 {activeView === 'DASHBOARD' ? 'Performance' : activeView === 'TRADES_LOG' ? 'Library' : activeView === 'CALENDAR' ? 'Monthly Scope' : activeView === 'PSYCHOLOGY' ? 'Psychology' : activeView === 'AI_INTELLIGENCE' ? 'Intelligence' : 'Analytics'}
               </h1>
               
@@ -498,9 +498,9 @@ const App: React.FC = () => {
                  </button>
                  
                  <div className="flex items-center gap-2 lg:hidden">
-                   <button onClick={() => {setEditingTrade(null); setIsFormOpen(true);}} className="w-10 h-10 flex items-center justify-center bg-black text-white rounded-full shadow-lg active:scale-90 transition-transform"><ICONS.Plus className="w-5 h-5" /></button>
-                   <button onClick={() => setActiveView('SETTINGS')} className="w-10 h-10 flex items-center justify-center bg-black/5 text-black/60 rounded-full active:scale-90 transition-transform"><ICONS.Settings className="w-5 h-5" /></button>
-                   <button onClick={handleLogout} className="w-10 h-10 flex items-center justify-center bg-rose-500/10 text-rose-600 rounded-full active:scale-90 transition-transform"><ICONS.LogOut className="w-5 h-5" /></button>
+                   <button onClick={() => {setEditingTrade(null); setIsFormOpen(true);}} className="w-9 h-9 flex items-center justify-center bg-black text-white rounded-full shadow-lg active:scale-90 transition-transform"><ICONS.Plus className="w-4 h-4" /></button>
+                   <button onClick={() => setActiveView('SETTINGS')} className="w-9 h-9 flex items-center justify-center bg-black/5 text-black/60 rounded-full active:scale-90 transition-transform"><ICONS.Settings className="w-4 h-4" /></button>
+                   <button onClick={handleLogout} className="w-9 h-9 flex items-center justify-center bg-rose-500/10 text-rose-600 rounded-full active:scale-90 transition-transform"><ICONS.LogOut className="w-4 h-4" /></button>
                  </div>
               </div>
             </div>
@@ -519,8 +519,8 @@ const App: React.FC = () => {
           </header>
         )}
 
-        <main className={`flex-1 overflow-y-auto touch-scroll will-change-transform pb-nav-safe lg:pb-12 ${activeView === 'SETTINGS' ? 'p-0 bg-[#EFEFEF]' : 'p-4 sm:p-6 md:p-10'} ${activeView !== 'SETTINGS' ? 'pt-[calc(56px+var(--sat)+16px)] lg:pt-6' : 'pt-0'} min-h-full`}>
-          <div className={`${activeView === 'SETTINGS' ? 'h-full' : 'max-w-6xl mx-auto space-y-8 sm:space-y-12'}`}>
+        <main className={`flex-1 overflow-y-auto touch-scroll will-change-transform pb-nav-safe lg:pb-12 ${activeView === 'SETTINGS' ? 'p-0 bg-[#EFEFEF]' : 'p-4 sm:p-6 md:p-10'} ${activeView !== 'SETTINGS' ? 'pt-[calc(56px+var(--sat)+16px)] lg:pt-6' : 'pt-0'} min-h-0`}>
+          <div className={`${activeView === 'SETTINGS' ? 'h-full' : 'max-w-6xl mx-auto space-y-6 sm:space-y-8'}`}>
              {activeView === 'DASHBOARD' && (
                <>
                  <Dashboard displayUnit={displayUnit} setDisplayUnit={setDisplayUnit} trades={filteredTrades} activeAccount={activeAccount} accounts={accounts} onTradeEdit={(t) => {setEditingTrade(t); setIsFormOpen(true);}} onTradeDelete={handleDeleteTrade} />
@@ -572,12 +572,13 @@ const App: React.FC = () => {
           </div>
         </main>
 
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] frosted-glass-nav h-[calc(64px+var(--sab))] flex items-start justify-around px-2 pt-2">
-          <button onClick={() => setActiveView('DASHBOARD')} className={`p-3 rounded-xl transition-all active:scale-90 ${activeView === 'DASHBOARD' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Dashboard className="w-6 h-6" /></button>
-          <button onClick={() => setActiveView('TRADES_LOG')} className={`p-3 rounded-xl transition-all active:scale-90 ${activeView === 'TRADES_LOG' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Journal className="w-6 h-6" /></button>
-          <button onClick={() => setActiveView('AI_INTELLIGENCE')} className={`p-3 rounded-xl transition-all active:scale-90 ${activeView === 'AI_INTELLIGENCE' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.AIIntelligence className="w-6 h-6" /></button>
-          <button onClick={() => setActiveView('ANALYTICS')} className={`p-3 rounded-xl transition-all active:scale-90 ${activeView === 'ANALYTICS' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Performance className="w-6 h-6" /></button>
-          <button onClick={() => setActiveView('PSYCHOLOGY')} className={`p-3 rounded-xl transition-all active:scale-90 ${activeView === 'PSYCHOLOGY' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Psychology className="w-6 h-6" /></button>
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] frosted-glass-nav h-[calc(64px+var(--sab))] flex items-start justify-around px-1 pt-2">
+          <button onClick={() => setActiveView('DASHBOARD')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'DASHBOARD' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Dashboard className="w-5 h-5" /></button>
+          <button onClick={() => setActiveView('TRADES_LOG')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'TRADES_LOG' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Journal className="w-5 h-5" /></button>
+          <button onClick={() => setActiveView('CALENDAR')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'CALENDAR' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Calendar className="w-5 h-5" /></button>
+          <button onClick={() => setActiveView('ANALYTICS')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'ANALYTICS' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Performance className="w-5 h-5" /></button>
+          <button onClick={() => setActiveView('PSYCHOLOGY')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'PSYCHOLOGY' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Psychology className="w-5 h-5" /></button>
+          <button onClick={() => setActiveView('AI_INTELLIGENCE')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'AI_INTELLIGENCE' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.AIIntelligence className="w-5 h-5" /></button>
         </nav>
       </div>
       {isMobileProfileSheetOpen && (

@@ -84,27 +84,27 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
   }, [year, month, totalDays, startDay]);
 
   return (
-    <div className="space-y-8 sm:space-y-12 animate-in fade-in duration-700">
+    <div className="space-y-6 animate-in fade-in duration-700 pb-10">
       
       {/* Month Navigation & Stats Header */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-8 flex items-center justify-between px-2">
-          <div className="flex items-center gap-6">
-            <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center bg-white/40 hover:bg-white rounded-full transition-all border border-black/5 shadow-sm">
-              <ICONS.ToggleLeft className="w-5 h-5 text-black/40" />
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        <div className="flex-1 w-full apple-glass p-6 rounded-[2.5rem] border border-black/5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center bg-black/5 hover:bg-black/10 rounded-full transition-all border border-black/5">
+              <ICONS.ToggleLeft className="w-5 h-5 text-black/60" />
             </button>
-            <div className="text-center">
-              <h2 className="text-2xl font-black tracking-tighter uppercase leading-none">{monthName} {year}</h2>
-              <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.2em] mt-1">Operational Summary</p>
+            <div className="text-center min-w-[140px]">
+              <h2 className="text-xl font-black tracking-tighter uppercase leading-none">{monthName} {year}</h2>
+              <p className="text-[9px] font-black text-black/20 uppercase tracking-[0.2em] mt-1">Operational Summary</p>
             </div>
-            <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center bg-white/40 hover:bg-white rounded-full transition-all border border-black/5 shadow-sm">
-              <ICONS.ToggleRight className="w-5 h-5 text-black/40" />
+            <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center bg-black/5 hover:bg-black/10 rounded-full transition-all border border-black/5">
+              <ICONS.ToggleRight className="w-5 h-5 text-black/60" />
             </button>
           </div>
-          <button onClick={() => setCurrentDate(new Date())} className="px-5 py-2.5 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Today</button>
+          <button onClick={() => setCurrentDate(new Date())} className="px-6 py-3 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Go to Today</button>
         </div>
 
-        <div className="lg:col-span-4 ceramic-white p-6 rounded-[2.5rem] border border-black/5 shadow-sm space-y-4">
+        <div className="w-full lg:w-[320px] ceramic-white p-6 rounded-[2.5rem] border border-black/5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-[10px] font-black text-black/30 uppercase tracking-widest">Month Metrics</h4>
             <div className={`px-2 py-0.5 rounded-full text-[8px] font-black ${monthStats.totalPnL >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
@@ -138,7 +138,7 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
       </div>
 
       {/* Calendar Grid */}
-      <div className="apple-glass p-4 md:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] ios-shadow border-white/60 overflow-hidden">
+      <div className="apple-glass p-4 md:p-8 rounded-[2.5rem] sm:rounded-[3.5rem] ios-shadow border-white/60 overflow-hidden">
         <div className="grid grid-cols-7 gap-2 md:gap-4 mb-6">
           {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
             <div key={day} className="text-center text-[9px] font-black text-black/10 tracking-[0.3em]">{day}</div>
