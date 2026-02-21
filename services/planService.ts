@@ -105,15 +105,44 @@ export const canUserAddAccount = async (userId: string, currentAccountCount: num
   return { allowed: true, limit: FREE_ACCOUNT_LIMIT };
 };
 
-/**
- * Updates the user profile to 'pro' status.
- */
-export const upgradeToPro = async (userId: string, stripeCustomerId: string): Promise<void> => {
-  const supabase = getSupabaseClient();
-  if (!supabase) return;
+// NOTE: upgradeToPro has been intentionally removed from the frontend.
+// The plan column can ONLY be updated by the Stripe webhook Netlify function
+// (netlify/functions/stripe-webhook.ts) which uses the SERVICE ROLE key.
+// This prevents any user from self-upgrading via the browser console.
 
-  await supabase
-    .from('profiles')
-    .update({ plan: 'pro', stripe_customer_id: stripeCustomerId })
-    .eq('id', userId);
+// ─────────────────────────────────────────────────────────────────────────────
+// Stripe Checkout — creates a Stripe Checkout session and redirects the user
+// Call this from your "Upgrade to Pro" button instead of window.open(stripeLink)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const startStripeCheckout = async (userId: string): Promise<void> => {
+  const priceId = import.meta.env?.VITE_STRIPE_PRICE_ID || process.env.VITE_STRIPE_PRICE_ID || '';
+  const successUrl = `${window.location.origin}/?upgrade=success`;
+  const cancelUrl = `${window.location.origin}/?upgrade=cancelled`;
+
+  if (!priceId) {
+    // Fallback to direct Stripe Payment Link if price ID not configured
+    const paymentLink = import.meta.env?.VITE_STRIPE_PAYMENT_LINK || process.env.VITE_STRIPE_PAYMENT_LINK || '';
+    if (paymentLink) {
+      window.open(`${paymentLink}?client_reference_id=${userId}`, '_blank');
+      return;
+    }
+    console.error('No VITE_STRIPE_PRICE_ID or VITE_STRIPE_PAYMENT_LINK set');
+    return;
+  }
+
+  try {
+    const response = await fetch('/.netlify/functions/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priceId, userId, successUrl, cancelUrl }),
+    });
+    const { url } = await response.json();
+    if (url) window.location.href = url;
+  } catch (err) {
+    console.error('Checkout error:', err);
+    // Fallback to direct payment link
+    const paymentLink = import.meta.env?.VITE_STRIPE_PAYMENT_LINK || '';
+    if (paymentLink) window.open(`${paymentLink}?client_reference_id=${userId}`, '_blank');
+  }
 };

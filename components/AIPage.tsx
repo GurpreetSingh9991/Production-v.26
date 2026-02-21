@@ -42,7 +42,7 @@ const AIPage: React.FC<AIPageProps> = ({ trades }) => {
 
   const handleGenerate = async () => {
     if (trades.length < 3) {
-      alert("AI Protocol requires at least 3 trades to identify statistical anomalies.");
+      alert("Not enough data.\n\nAI Intelligence needs at least 3 logged trades to identify patterns. Add more trades and try again.");
       return;
     }
 
@@ -57,7 +57,7 @@ const AIPage: React.FC<AIPageProps> = ({ trades }) => {
       setCanRefresh(false);
     } catch (err) {
       console.error(err);
-      alert("Synthesis Error. Check API configuration or network logs.");
+      alert("AI synthesis failed.\n\nCheck that your GEMINI_API_KEY is set correctly in your environment variables.");
     } finally {
       setIsLoading(false);
     }

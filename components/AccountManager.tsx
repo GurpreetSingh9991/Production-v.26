@@ -22,7 +22,7 @@ const AccountManager: React.FC<AccountManagerProps> = ({ accounts, onSave, onClo
   const handleAdd = () => {
     if (!newAccount.name) return;
     if (!canAddMore) {
-      alert("Free plan is limited to 1 account. Upgrade to Pro for multi-broker management.");
+      alert("🔒 Free plan is limited to 1 account.\n\nUpgrade to Pro ($8.99/mo) to add unlimited broker accounts and trade across multiple scopes.");
       return;
     }
     const acc: Account = {
@@ -67,15 +67,15 @@ const AccountManager: React.FC<AccountManagerProps> = ({ accounts, onSave, onClo
       } else {
         console.error("UI: Deletion rejected by backend.", result.error);
         if (result.error?.code === '23503') {
-           alert("Deletion Failed: This account is linked to trades. Ensure you have the 'ON DELETE CASCADE' rule set in your Supabase SQL editor.");
+           alert("Cannot delete: This account has trades linked to it.\n\nMake sure your Supabase trades table has ON DELETE CASCADE set for account_id. Check full_setup.sql.");
         } else {
            const errMsg = result.error?.message || "Unknown error";
-           alert(`Deletion Failed: ${errMsg}`);
+           alert(`Deletion failed: ${errMsg}\n\nCheck your Supabase connection and try again.`);
         }
       }
     } catch (err: any) {
       console.error("UI: Network error during deletion:", err);
-      alert(`Network Error: ${err.message || 'Check your connection.'}`);
+      alert(`Connection error: ${err.message || "Check your internet connection and try again."}`);
     } finally {
       setIsDeletingId(null);
     }

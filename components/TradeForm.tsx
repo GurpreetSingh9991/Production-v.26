@@ -231,6 +231,37 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const errors: string[] = [];
+
+    if (!formData.symbol?.trim()) {
+      errors.push('Symbol is required');
+    }
+    if (!formData.date) {
+      errors.push('Date is required');
+    }
+    if (!formData.qty || Number(formData.qty) <= 0) {
+      errors.push('Quantity must be greater than 0');
+    }
+    if (!formData.entryPrice || Number(formData.entryPrice) <= 0) {
+      errors.push('Entry price must be greater than 0');
+    }
+    if (!formData.exitPrice || Number(formData.exitPrice) <= 0) {
+      errors.push('Exit price must be greater than 0');
+    }
+    if (
+      Number(formData.entryPrice) > 0 &&
+      Number(formData.exitPrice) > 0 &&
+      Number(formData.entryPrice) === Number(formData.exitPrice)
+    ) {
+      errors.push('Entry and exit price cannot be identical');
+    }
+
+    if (errors.length > 0) {
+      alert('Please fix the following before saving:\n\n• ' + errors.join('\n• '));
+      return;
+    }
+
     onSave(formData as Trade);
   };
 

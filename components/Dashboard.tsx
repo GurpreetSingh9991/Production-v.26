@@ -100,7 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
 
     const formatValue = (pnl: number, trade?: Trade) => {
       switch (displayUnit) {
-        case 'PERCENT': return (pnl / startingEquity) * 100;
+        case 'PERCENT': return startingEquity > 0 ? (pnl / startingEquity) * 100 : 0;
         case 'R_MULTIPLE': return trade ? trade.rr : (pnl / Math.abs(avgPnL || 1));
         case 'TICKS':
           if (trade) return (Math.abs(trade.exitPrice - trade.entryPrice)) * (trade.multiplier || 1);
@@ -145,8 +145,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     }
 
     // Max Drawdown Logic
-    let peak = startingEquity;
-    let currentEq = startingEquity;
+    let peak = startingEquity || 0;
+    let currentEq = startingEquity || 0;
     let maxDrawdownPct = 0;
     for (const t of sortedTrades) {
       currentEq += (Number(t.pnl) || 0);
@@ -170,7 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     const followedPlanCount = currentTrades.filter(t => t.followedPlan === true).length;
     const disciplineScore = currentTrades.length > 0 ? (followedPlanCount / currentTrades.length) * 100 : 0;
 
-    let cumulative = displayUnit === 'CURRENCY' ? startingEquity : 0;
+    let cumulative = displayUnit === 'CURRENCY' ? (startingEquity || 0) : 0;
     const equityData = sortedTrades.map((t) => {
       const val = formatValue(t.pnl, t);
       cumulative += val;
@@ -266,7 +266,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     let suffix = '';
 
     if (displayUnit === 'PERCENT') {
-        displayPnL = (trade.pnl / startingEquity) * 100;
+        displayPnL = startingEquity > 0 ? (trade.pnl / startingEquity) * 100 : 0;
         suffix = '%';
     } else if (displayUnit === 'R_MULTIPLE') {
         displayPnL = trade.rr;

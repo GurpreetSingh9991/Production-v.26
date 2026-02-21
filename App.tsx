@@ -3,7 +3,7 @@ import { Trade, ViewType, PerformanceUnit, Account } from './types';
 import { ICONS, TRADER_QUOTES, COLORS } from './constants';
 import { loadTrades, saveTrades, exportToCSV } from './services/storage';
 import { getSupabaseTrades, syncSingleTradeToSupabase, syncTradesToSupabase, deleteSupabaseTrade, getSupabaseAccounts, syncAccountsToSupabase, getSession, signOut, getSupabaseClient, clearAuthSession } from './services/supabase';
-import { canUserAddTrade, getUserPlan } from './services/planService';
+import { canUserAddTrade, getUserPlan, startStripeCheckout } from './services/planService';
 import Dashboard from './components/Dashboard';
 import TradeLog from './components/TradeLog';
 import Calendar from './components/Calendar';
@@ -16,6 +16,30 @@ import ProfileSettings from './components/ProfileSettings';
 import AccountManager from './components/AccountManager';
 import Auth from './components/Auth';
 import { Session } from '@supabase/supabase-js';
+
+// ─── Lightweight Toast System ─────────────────────────────────────────────────
+interface Toast { id: number; message: string; type: 'success' | 'error' | 'info' | 'warn'; }
+let toastIdCounter = 0;
+
+const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: number) => void }> = ({ toasts, onRemove }) => (
+  <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none" style={{maxWidth:'320px'}}>
+    {toasts.map(t => (
+      <div key={t.id} onClick={() => onRemove(t.id)}
+        className={`pointer-events-auto px-4 py-3 rounded-2xl shadow-2xl text-[12px] font-bold flex items-start gap-3 cursor-pointer animate-in slide-in-from-top-2 duration-300 ${
+          t.type === 'success' ? 'bg-emerald-500 text-white' :
+          t.type === 'error'   ? 'bg-rose-500 text-white' :
+          t.type === 'warn'    ? 'bg-amber-400 text-black' :
+                                 'bg-[#111] text-white'
+        }`}>
+        <span className="mt-0.5 shrink-0 text-[14px]">
+          {t.type === 'success' ? '✓' : t.type === 'error' ? '✗' : t.type === 'warn' ? '⚠' : 'ℹ'}
+        </span>
+        <span className="leading-snug">{t.message}</span>
+      </div>
+    ))}
+  </div>
+);
+
 
 const UpgradeGate: React.FC<{ feature: string; onUpgrade: () => void }> = ({ feature, onUpgrade }) => (
   <div className="apple-glass rounded-[2rem] max-w-md mx-auto mt-20 p-10 text-center flex flex-col items-center border border-black/5 shadow-sm">
@@ -48,9 +72,37 @@ const App: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAccountManagerOpen, setIsAccountManagerOpen] = useState(false);
   const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
-  const [upgradePrompt, setUpgradePrompt] = useState(false);
-  const [userPlan, setUserPlan] = useState<'free' | 'pro' | 'pro'>('free');
+  const [upgradePrompt, setUpgradePrompt] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // Handle Stripe redirect back to app after successful payment
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('upgrade') === 'success') {
+      // Refresh plan from Supabase (webhook should have updated it)
+      setTimeout(async () => {
+        if (session?.user?.id) {
+          const plan = await getUserPlan(session.user.id);
+          setUserPlan(plan);
+        }
+        toast('🎉 Welcome to Pro! All features are now unlocked.', 'success', 6000);
+      }, 1500);
+      // Clean the URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('upgrade') === 'cancelled') {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [session]);
+
+  const toast = (message: string, type: Toast['type'] = 'info', duration = 3500) => {
+    const id = ++toastIdCounter;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
+  };
+  const removeToast = (id: number) => setToasts(prev => prev.filter(t => t.id !== id));
+  const [userPlan, setUserPlan] = useState<'free' | 'pro'>('free');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -247,7 +299,7 @@ const App: React.FC = () => {
   const handleExternalSync = async () => {
     const sheetUrl = localStorage.getItem('tf_sheet_url');
     if (!sheetUrl) {
-      alert('No Google Sheet linked. Add a sheet URL in Settings first.');
+      toast('No Google Sheet linked. Add a sheet URL in Settings first.', 'warn');
       return;
     }
     setIsSyncing(true);
@@ -266,18 +318,18 @@ const App: React.FC = () => {
         setTrades(merged);
         saveTrades(merged);
         await syncTradesToSupabase(merged);
-        alert(`Successfully synced ${syncedTrades.length} trades from Google Sheets.`);
+        toast(`✓ Synced ${syncedTrades.length} trades from Google Sheets`, 'success');
       } else if (syncedTrades !== null) {
-        alert('Sheet synced but no trades found. Check your sheet format.');
+        toast('Sheet synced but no trades found. Check your sheet format.', 'warn');
       } else {
-        alert('Sync failed. Make sure your sheet is shared to "Anyone with the link".');
+        toast('Sync failed. Make sure your sheet is shared to "Anyone with the link".', 'error');
       }
     } catch (e: any) {
       if (e.message === 'AUTH_ERROR') {
         await handleAuthCleanup();
         return;
       }
-      alert(`Sync error: ${e.message}`);
+      toast(`Sync error: ${e.message}`, 'error');
     } finally {
       setIsSyncing(false);
     }
@@ -300,13 +352,13 @@ const App: React.FC = () => {
         setTrades(remoteTrades);
         saveTrades(remoteTrades);
       }
-      alert('Cloud data refreshed successfully.');
+      toast('Cloud data refreshed', 'success');
     } catch (e: any) {
       if (e.message === 'AUTH_ERROR') {
         await handleAuthCleanup();
         return;
       }
-      alert('Cloud refresh failed. Check your connection.');
+      toast('Cloud refresh failed. Check your connection.', 'error');
     } finally {
       setIsCloudSyncing(false);
     }
@@ -319,7 +371,7 @@ const App: React.FC = () => {
       const { parseCSV } = await import('./services/storage');
       const imported = parseCSV(csvText, activeAccountId !== 'ALL' ? activeAccountId : (accounts[0]?.id || ''));
       if (imported.length === 0) {
-        alert('No trades found in CSV. Check the file format.');
+        toast('No trades found in CSV. Check the file format.', 'warn');
         setIsImporting(false);
         return;
       }
@@ -327,13 +379,13 @@ const App: React.FC = () => {
       setTrades(merged);
       saveTrades(merged);
       await syncTradesToSupabase(merged);
-      alert(`Successfully imported ${imported.length} trades. Your KPIs have been updated.`);
+      toast(`✓ Imported ${imported.length} trades`, 'success');
     } catch (e: any) {
       if (e.message === 'AUTH_ERROR') {
         await handleAuthCleanup();
         return;
       }
-      alert(`Import failed: ${e.message}`);
+      toast(`Import failed: ${e.message}`, 'error');
     } finally {
       setIsImporting(false);
     }
@@ -542,17 +594,17 @@ const App: React.FC = () => {
              {activeView === 'ANALYTICS' && (
                userPlan === 'pro' 
                  ? <Analytics trades={filteredTrades} />
-                 : <UpgradeGate feature="Analytics" onUpgrade={() => setUpgradePrompt(true)} />
+                 : <UpgradeGate feature="Analytics" onUpgrade={() => setUpgradePrompt('analytics')} />
              )}
              {activeView === 'PSYCHOLOGY' && (
                userPlan === 'pro' 
                  ? <Psychology trades={filteredTrades} />
-                 : <UpgradeGate feature="Psychology Tracker" onUpgrade={() => setUpgradePrompt(true)} />
+                 : <UpgradeGate feature="Psychology Tracker" onUpgrade={() => setUpgradePrompt('psychology')} />
              )}
              {activeView === 'AI_INTELLIGENCE' && (
                userPlan === 'pro' 
                  ? <AIPage trades={filteredTrades} />
-                 : <UpgradeGate feature="AI Intelligence" onUpgrade={() => setUpgradePrompt(true)} />
+                 : <UpgradeGate feature="AI Intelligence" onUpgrade={() => setUpgradePrompt('ai')} />
              )}
              {activeView === 'SETTINGS' && (
                <div className="px-6 sm:px-10 lg:px-0">
@@ -577,13 +629,41 @@ const App: React.FC = () => {
           </div>
         </main>
 
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] frosted-glass-nav h-[calc(64px+var(--sab))] flex items-start justify-around px-1 pt-2">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] frosted-glass-nav h-[calc(64px+var(--sab))] flex items-start justify-around px-2 pt-2">
           <button onClick={() => setActiveView('DASHBOARD')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'DASHBOARD' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Dashboard className="w-5 h-5" /></button>
           <button onClick={() => setActiveView('TRADES_LOG')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'TRADES_LOG' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Journal className="w-5 h-5" /></button>
           <button onClick={() => setActiveView('CALENDAR')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'CALENDAR' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Calendar className="w-5 h-5" /></button>
           <button onClick={() => setActiveView('ANALYTICS')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'ANALYTICS' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Performance className="w-5 h-5" /></button>
-          <button onClick={() => setActiveView('PSYCHOLOGY')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'PSYCHOLOGY' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.Psychology className="w-5 h-5" /></button>
-          <button onClick={() => setActiveView('AI_INTELLIGENCE')} className={`p-2.5 rounded-xl transition-all active:scale-90 ${activeView === 'AI_INTELLIGENCE' ? 'text-black bg-black/5' : 'text-black/30'}`}><ICONS.AIIntelligence className="w-5 h-5" /></button>
+          {/* More menu — Psychology + AI collapsed here on mobile */}
+          <div className="relative">
+            <button
+              onClick={() => setIsMobileMoreOpen(prev => !prev)}
+              className={`p-2.5 rounded-xl transition-all active:scale-90 relative ${['PSYCHOLOGY','AI_INTELLIGENCE'].includes(activeView) ? 'text-black bg-black/5' : 'text-black/30'}`}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>
+              {userPlan === 'free' && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-black/20" />}
+            </button>
+            {isMobileMoreOpen && (
+              <div className="absolute bottom-full right-0 mb-2 bg-white rounded-2xl shadow-2xl border border-black/5 overflow-hidden animate-in slide-in-from-bottom-2 duration-200 min-w-[160px]">
+                <button
+                  onClick={() => { setActiveView('PSYCHOLOGY'); setIsMobileMoreOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-colors ${activeView === 'PSYCHOLOGY' ? 'bg-black/5 text-black' : 'text-black/40 hover:text-black hover:bg-black/3'}`}
+                >
+                  <ICONS.Psychology className="w-4 h-4" />
+                  Psychology
+                  {userPlan === 'free' && <span className="ml-auto text-[8px] bg-black text-white px-1.5 py-0.5 rounded-full">PRO</span>}
+                </button>
+                <button
+                  onClick={() => { setActiveView('AI_INTELLIGENCE'); setIsMobileMoreOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-colors ${activeView === 'AI_INTELLIGENCE' ? 'bg-black/5 text-black' : 'text-black/40 hover:text-black hover:bg-black/3'}`}
+                >
+                  <ICONS.AIIntelligence className="w-4 h-4" />
+                  AI Intel
+                  {userPlan === 'free' && <span className="ml-auto text-[8px] bg-black text-white px-1.5 py-0.5 rounded-full">PRO</span>}
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
       </div>
       {isMobileProfileSheetOpen && (
@@ -636,16 +716,31 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {upgradePrompt && (
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {upgradePrompt !== null && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setUpgradePrompt(false)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setUpgradePrompt(null)} />
           <div className="apple-glass w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300 text-center border-white/20">
             <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl"><ICONS.Zap className="w-8 h-8 text-white" /></div>
-            <h3 className="text-xl font-black tracking-tight text-black mb-2">Free Plan Limit Reached</h3>
-            <p className="text-xs font-semibold text-black/60 leading-relaxed mb-8">You've used all 15 trades this month. Upgrade to Pro for unlimited trades, AI insights, and advanced analytics.</p>
+            <h3 className="text-xl font-black tracking-tight text-black mb-2">
+              {upgradePrompt === 'trades' ? 'Trade Limit Reached' :
+               upgradePrompt === 'analytics' ? 'Analytics is Pro' :
+               upgradePrompt === 'psychology' ? 'Psychology Tracker is Pro' :
+               upgradePrompt === 'ai' ? 'AI Intelligence is Pro' : 'Upgrade to Pro'}
+            </h3>
+            <p className="text-xs font-semibold text-black/60 leading-relaxed mb-8">
+              {upgradePrompt === 'trades'
+                ? "You\'ve used all 15 trades this month. Upgrade to Pro for unlimited trades, AI insights, and advanced analytics."
+                : upgradePrompt === 'analytics'
+                ? 'Unlock setup performance, session analysis, R-multiple distribution, and day-of-week patterns.'
+                : upgradePrompt === 'psychology'
+                ? 'Track pre/post-trade mood, emotional states, plan adherence, and quantify the cost of trading mistakes.'
+                : 'Let Gemini AI analyze your journal to surface hidden patterns and personalized recommendations.'}
+            </p>
             <div className="space-y-3">
-              <button onClick={() => { console.log('upgrade clicked'); setUpgradePrompt(false); }} className="w-full py-4 bg-black text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">Upgrade to Pro</button>
-              <button onClick={() => setUpgradePrompt(false)} className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors">Maybe Later</button>
+              <button onClick={() => { if (session?.user?.id) startStripeCheckout(session.user.id); setUpgradePrompt(null); }} className="w-full py-4 bg-black text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">Upgrade to Pro</button>
+              <button onClick={() => setUpgradePrompt(null)} className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors">Maybe Later</button>
             </div>
           </div>
         </div>
@@ -659,7 +754,7 @@ const App: React.FC = () => {
             if (!editingTrade && session?.user) {
               const check = await canUserAddTrade(session.user.id);
               if (!check.allowed) {
-                setUpgradePrompt(true);
+                setUpgradePrompt('trades');
                 return;
               }
             }

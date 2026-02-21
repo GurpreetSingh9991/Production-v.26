@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ICONS } from '../constants';
 import { getSupabaseClient, getSession } from '../services/supabase';
-import { getTradeCountThisMonth } from '../services/planService';
+import { getTradeCountThisMonth, startStripeCheckout } from '../services/planService';
 
 interface ProfileSettingsProps {
   onClose: () => void;
@@ -13,6 +13,18 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usage, setUsage] = useState<number>(0);
+  
+  // Developer-only gate: only show dev tools to the account owner.
+  // Set VITE_OWNER_EMAIL=your@email.com in Netlify env vars / .env.local
+  // Other users will never see this section — it's invisible in the UI.
+  const ownerEmail = typeof import.meta !== 'undefined'
+    ? (import.meta.env?.VITE_OWNER_EMAIL || '')
+    : '';
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
+  useEffect(() => {
+    getSession().then(s => setCurrentUserEmail(s?.user?.email || ''));
+  }, []);
+  const isOwner = ownerEmail && currentUserEmail && currentUserEmail === ownerEmail;
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -165,13 +177,20 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
                     />
                  </div>
                  {plan === 'free' && (
-                    <p className="text-[8px] font-bold text-black/30 italic">Upgrade for unlimited trades, AI narrative analysis, and advanced metrics.</p>
+                    <button
+                      onClick={async () => { const s = await getSession(); if (s?.user?.id) startStripeCheckout(s.user.id); }}
+                      className="w-full mt-2 py-3 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] shadow-lg active:scale-95 transition-all hover:bg-black/80 flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                      Upgrade to Pro — $8.99/mo
+                    </button>
                  )}
               </div>
             </div>
           </section>
 
-          {/* Developer Tools Section */}
+          {/* Developer Tools Section — OWNER ONLY, invisible to all other users */}
+          {isOwner && (
           <section className="space-y-4">
             <div className="flex items-center gap-2.5">
               <div className="w-1 h-4 bg-black rounded-full"></div>
@@ -193,6 +212,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
               </button>
             </div>
           </section>
+          )}
 
           {/* Identity Section */}
           <form onSubmit={handleUpdate} className="space-y-6">

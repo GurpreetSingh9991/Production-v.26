@@ -51,7 +51,7 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
 
   const handleSave = () => {
     if (url && !url.includes('docs.google.com/spreadsheets')) {
-      alert('Please enter a valid Google Sheets URL');
+      alert('Please enter a valid Google Sheets URL.\n\nExample: https://docs.google.com/spreadsheets/d/...');
       return;
     }
     
@@ -229,7 +229,7 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
                     if (userPlan === 'pro') {
                       fileInputRef.current?.click();
                     } else {
-                      alert("Upgrade to Pro to import trades from other platforms.");
+                      alert("📊 Import is a Pro feature.\n\nUpgrade to Pro ($8.99/mo) to import trades from Tradezella, Interactive Brokers, ThinkorSwim, MT5, and more.");
                     }
                   }}
                   badge={userPlan === 'pro' ? <span className="px-2 py-0.5 bg-black text-white text-[8px] font-black rounded-full ml-2">PRO</span> : <span className="px-2 py-0.5 bg-black/10 text-black/40 text-[8px] font-black rounded-full ml-2">PRO</span>}
@@ -251,7 +251,7 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
                     if (userPlan === 'pro') {
                       onExternalSync();
                     } else {
-                      alert("Upgrade to Pro to sync with Google Sheets.");
+                      alert("🔄 Google Sheets Sync is a Pro feature.\n\nUpgrade to Pro ($8.99/mo) to sync your trades automatically.");
                     }
                   }}
                   loading={isSyncing}
@@ -305,13 +305,13 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
                   icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>} 
                   label="Privacy Policy" 
                   description="VIEW OUR DATA & PRIVACY TERMS"
-                  onClick={() => window.open('#', '_blank')}
+                  onClick={() => window.open('mailto:support@tradeflowstudio.com?subject=Privacy%20Policy%20Request', '_blank')}
                 />
                 <SettingRow 
                   icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>} 
                   label="Terms of Service" 
                   description="VIEW TERMS & CONDITIONS"
-                  onClick={() => window.open('#', '_blank')}
+                  onClick={() => window.open('mailto:support@tradeflowstudio.com?subject=Terms%20of%20Service%20Request', '_blank')}
                   isLast={true}
                 />
               </div>

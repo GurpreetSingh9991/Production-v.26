@@ -105,6 +105,16 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
 
   return (
     <div className="min-h-screen bg-[#D6D6D6] flex items-center justify-center p-6 pt-safe pb-safe selection:bg-black/10">
+      {/* Back to landing page */}
+      <a
+        href="https://tradeflowstudio.netlify.app"
+        className="fixed top-6 left-6 z-50 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors group"
+      >
+        <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Home
+      </a>
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-black/5 rounded-full blur-[100px] pointer-events-none"></div>
 
       <div className="w-full max-w-md apple-glass rounded-[3rem] p-10 md:p-12 ambient-shadow relative overflow-hidden animate-reagle border-white/40">
