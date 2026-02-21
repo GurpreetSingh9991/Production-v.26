@@ -1,188 +1,313 @@
 import React, { useState, useEffect } from 'react';
 import { Trade } from '../types';
 import { ICONS } from '../constants';
-import { generateDailyBriefing } from '../services/geminiService';
+import {
+  getCurrentWeekKey,
+  isEndOfTradingWeek,
+  getNextFriday,
+  buildWeeklyPayload,
+} from '../services/geminiService';
+import { getSupabaseClient, getSession } from '../services/supabase';
 
 interface AIPageProps {
   trades: Trade[];
 }
 
 interface CachedInsight {
-  date: string;
+  weekKey: string;
   content: string;
+  generatedAt: string;
+  tradeCount: number;
 }
 
+// ── Supabase Cache Helpers ─────────────────────────────────────────────────
+const saveInsightToSupabase = async (insight: CachedInsight) => {
+  const supabase = getSupabaseClient();
+  const session  = await getSession();
+  if (!supabase || !session?.user?.id) return;
+
+  // upsert = INSERT or REPLACE — always overwrites the single row.
+  // This means only 3 columns of storage per user, forever.
+  // Old insight is replaced by new one — no accumulation.
+  await supabase.from('profiles').upsert({
+    id:                 session.user.id,
+    ai_insight_content: insight.content,
+    ai_insight_week:    insight.weekKey,
+    ai_insight_updated: insight.generatedAt,
+  }, { onConflict: 'id' });
+};
+
+const loadInsightFromSupabase = async (): Promise<CachedInsight | null> => {
+  const supabase = getSupabaseClient();
+  const session  = await getSession();
+  if (!supabase || !session?.user?.id) return null;
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('ai_insight_content, ai_insight_week, ai_insight_updated')
+    .eq('id', session.user.id)
+    .single();
+
+  if (!data?.ai_insight_content || !data?.ai_insight_week) return null;
+
+  return {
+    weekKey:     data.ai_insight_week,
+    content:     data.ai_insight_content,
+    generatedAt: data.ai_insight_updated || '',
+    tradeCount:  0,
+  };
+};
+
+// ── Week-scoped trades helper ─────────────────────────────────────────────
+const getThisWeekTrades = (trades: Trade[]): Trade[] => {
+  const now  = new Date();
+  const day  = now.getDay(); // 0=Sun
+  // Start of trading week = last Monday
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+  const mondayStr = monday.toISOString().split('T')[0];
+
+  return trades.filter(t => t.date >= mondayStr);
+};
+
+// ── Component ─────────────────────────────────────────────────────────────
 const AIPage: React.FC<AIPageProps> = ({ trades }) => {
-  const [insight, setInsight] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [canRefresh, setCanRefresh] = useState(false);
+  const [insight, setInsight]           = useState<string | null>(null);
+  const [cachedWeek, setCachedWeek]     = useState<string | null>(null);
+  const [generatedAt, setGeneratedAt]   = useState<string>('');
+  const [isLoadingCache, setIsLoadingCache] = useState(true);
+  const [weekTrades, setWeekTrades]     = useState<Trade[]>([]);
 
+  const currentWeekKey = getCurrentWeekKey();
+  const endOfWeek      = isEndOfTradingWeek();
+  const nextFriday     = getNextFriday();
+  const hasNewWeek     = cachedWeek !== currentWeekKey;
+
+  // Load cached insight from Supabase on mount
   useEffect(() => {
-    const checkCache = () => {
-      const today = new Date().toDateString();
-      const cached = localStorage.getItem('tf_daily_insight');
-      
-      if (cached) {
-        try {
-          const parsed: CachedInsight = JSON.parse(cached);
-          if (parsed.date === today) {
+    const load = async () => {
+      setIsLoadingCache(true);
+      try {
+        // Try Supabase first (persists across devices)
+        const remote = await loadInsightFromSupabase();
+        if (remote) {
+          setInsight(remote.content);
+          setCachedWeek(remote.weekKey);
+          setGeneratedAt(remote.generatedAt);
+        } else {
+          // Fallback to localStorage
+          const local = localStorage.getItem('tf_weekly_insight');
+          if (local) {
+            const parsed: CachedInsight = JSON.parse(local);
             setInsight(parsed.content);
-            setCanRefresh(false);
-            return;
+            setCachedWeek(parsed.weekKey);
+            setGeneratedAt(parsed.generatedAt);
           }
-        } catch (e) {
-          localStorage.removeItem('tf_daily_insight');
         }
+      } catch (e) {
+        console.warn('Could not load cached insight:', e);
+      } finally {
+        setIsLoadingCache(false);
       }
-      setCanRefresh(true);
     };
-
-    checkCache();
+    load();
   }, []);
 
-  const handleGenerate = async () => {
-    if (trades.length < 3) {
-      alert("Not enough data.\n\nAI Intelligence needs at least 3 logged trades to identify patterns. Add more trades and try again.");
-      return;
-    }
+  // Compute this week's trades whenever trades prop changes
+  useEffect(() => {
+    setWeekTrades(getThisWeekTrades(trades));
+  }, [trades]);
 
-    setIsLoading(true);
-    try {
-      const result = await generateDailyBriefing(trades);
-      const today = new Date().toDateString();
-      const cacheData: CachedInsight = { date: today, content: result };
-      
-      localStorage.setItem('tf_daily_insight', JSON.stringify(cacheData));
-      setInsight(result);
-      setCanRefresh(false);
-    } catch (err) {
-      console.error(err);
-      alert("AI synthesis failed.\n\nCheck that your GEMINI_API_KEY is set correctly in your environment variables.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Insights are generated by the weekly batch function (netlify/functions/weekly-insights.ts)
+  // No on-demand generation for users — batch runs every Friday at 18:00 UTC
+
+  // Compute weekly stats preview for the "locked" state
+  const weekStats = weekTrades.length >= 3 ? (() => {
+    try { return buildWeeklyPayload(weekTrades); } catch { return null; }
+  })() : null;
+
+  const formattedDate = generatedAt
+    ? new Date(generatedAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    : '';
+
+  // Is cached insight from this week or last week?
+  const insightIsThisWeek = cachedWeek === currentWeekKey;
 
   return (
     <div className="space-y-8 pb-12 animate-in fade-in duration-700">
-      {/* Protocol Header */}
+
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
         <div className="space-y-1">
-          <h1 className="text-3xl font-black text-black tracking-tighter uppercase leading-none">Cognitive Terminal</h1>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Daily Performance Synthesis</p>
+          <h1 className="text-3xl font-black text-black tracking-tighter uppercase leading-none">
+            Cognitive Terminal
+          </h1>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">
+            Weekly Performance Synthesis
+          </p>
         </div>
-        
+
         <div className="flex bg-white/40 backdrop-blur-xl border border-white/60 rounded-full px-5 py-2.5 items-center gap-4 shadow-sm">
-           <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[8px] font-black uppercase tracking-widest text-black/60">Core: Gemini 3</span>
-           </div>
-           <div className="w-px h-3 bg-black/10" />
-           <div className="flex items-center gap-2">
-              <span className="text-[8px] font-black uppercase tracking-widest text-black/60">Limit: 1/Day</span>
-           </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full ${endOfWeek ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
+            <span className="text-[8px] font-black uppercase tracking-widest text-black/60">
+              Core: Gemini 2.0
+            </span>
+          </div>
+          <div className="w-px h-3 bg-black/10" />
+          <span className="text-[8px] font-black uppercase tracking-widest text-black/60">
+            {endOfWeek ? '🟢 Window Open' : `🔒 Opens Friday`}
+          </span>
         </div>
       </div>
 
+      {/* This Week's Stats Preview Bar */}
+      {weekStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Trades This Week', value: weekStats.totalTrades },
+            { label: 'Win Rate', value: `${weekStats.winRate.toFixed(0)}%` },
+            { label: 'Total P&L', value: `${weekStats.totalPnL >= 0 ? '+' : ''}$${weekStats.totalPnL.toFixed(0)}` },
+            { label: 'Profit Factor', value: weekStats.profitFactor === 999 ? '∞' : weekStats.profitFactor.toFixed(2) },
+          ].map(s => (
+            <div key={s.label} className="apple-glass rounded-2xl p-4 text-center border-white/60">
+              <div className={`text-xl font-black tracking-tight ${
+                s.label === 'Total P&L'
+                  ? weekStats.totalPnL >= 0 ? 'text-emerald-600' : 'text-rose-500'
+                  : 'text-black'
+              }`}>{s.value}</div>
+              <div className="text-[8px] font-black uppercase tracking-widest text-black/30 mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Main Report Area */}
       <div className="bg-white/80 backdrop-blur-3xl rounded-2xl border border-white/40 shadow-2xl overflow-hidden min-h-[500px] flex flex-col relative">
-        {/* Abstract Background Detail */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-violet-500/5 rounded-full blur-[100px] pointer-events-none" />
-        
-        {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-6">
-             <div className="relative">
-                <div className="w-20 h-20 border-[6px] border-violet-500/10 border-t-violet-600 rounded-full animate-spin" />
-                <ICONS.AIIntelligence className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-violet-600 animate-pulse" />
-             </div>
-             <div className="space-y-2">
-                <h3 className="text-sm font-black uppercase tracking-widest text-black">Decrypting Session Logs</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-[250px]">Gemini is parsing behavior patterns and statistical drift...</p>
-             </div>
+
+
+
+        {/* Loading cache */}
+        {isLoadingCache && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-black/10 border-t-black/40 rounded-full animate-spin" />
           </div>
-        ) : insight ? (
+        )}
+
+        {/* Has insight */}
+        {!isLoadingCache && insight && (
           <div className="flex-1 p-8 md:p-14 animate-in slide-in-from-bottom-4 duration-1000">
-            <div className="prose prose-sm max-w-none 
-              prose-p:text-[14px] prose-p:font-medium prose-p:leading-relaxed prose-p:text-slate-700 
+
+            {/* Week badge */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                insightIsThisWeek
+                  ? 'bg-emerald-500/10 text-emerald-600'
+                  : 'bg-black/5 text-black/40'
+              }`}>
+                {insightIsThisWeek ? `✓ This Week · ${formattedDate}` : `↩ Last Week · ${formattedDate} — New insight available Friday`}
+              </div>
+            </div>
+
+            <div className="prose prose-sm max-w-none
+              prose-p:text-[14px] prose-p:font-medium prose-p:leading-relaxed prose-p:text-slate-700
               prose-headings:font-black prose-headings:uppercase prose-headings:tracking-widest prose-headings:text-black
               prose-h3:text-[11px] prose-h3:mt-8 prose-h3:mb-4 prose-h3:text-violet-600
               prose-strong:text-black prose-strong:font-black
               prose-li:text-[14px] prose-li:font-medium prose-li:text-slate-600">
               <div dangerouslySetInnerHTML={{ __html: formatMarkdown(insight) }} />
             </div>
-            
-            <div className="mt-12 pt-12 border-t border-black/5 flex flex-col sm:flex-row items-center justify-between gap-4 opacity-30">
-               <div className="flex items-center gap-3">
-                  <ICONS.Logo className="w-5 h-5" />
-                  <span className="text-[9px] font-black uppercase tracking-widest">TradeFlow Audit v1.0 • Session Encrypted</span>
-               </div>
-               <span className="text-[9px] font-black uppercase tracking-widest">Report Refreshes at 00:00 Local</span>
+
+            {/* Footer */}
+            <div className="mt-12 pt-8 border-t border-black/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3 opacity-30">
+                <ICONS.Logo className="w-5 h-5" />
+                <span className="text-[9px] font-black uppercase tracking-widest">TradeFlow Weekly Audit · {cachedWeek}</span>
+              </div>
+
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* No insight yet */}
+        {!isLoadingCache && !insight && (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-8">
-             <div className="w-24 h-24 bg-black/[0.03] rounded-2xl flex items-center justify-center">
-                <ICONS.AIIntelligence className="w-10 h-10 text-black/10" />
-             </div>
-             <div className="max-w-sm space-y-3">
-                <h3 className="text-lg font-black uppercase tracking-tight text-black">Intelligence Lockdown</h3>
-                <p className="text-xs font-semibold text-slate-400 leading-relaxed italic">
-                  Today's session data is pending analysis. Every 24 hours, the AI Core resets to synthesize your latest executions.
+            <div className="w-24 h-24 bg-black/[0.03] rounded-2xl flex items-center justify-center">
+              <ICONS.AIIntelligence className="w-10 h-10 text-black/10" />
+            </div>
+
+            <div className="max-w-sm space-y-5">
+              <h3 className="text-lg font-black uppercase tracking-tight text-black">
+                {weekTrades.length >= 3 && endOfWeek
+                  ? 'Report Generating…'
+                  : weekTrades.length < 3
+                  ? 'Keep Trading'
+                  : 'Weekly Synthesis Pending'}
+              </h3>
+              <p className="text-xs font-semibold text-slate-400 leading-relaxed">
+                {weekTrades.length >= 3 && endOfWeek
+                  ? "Your weekly report is being processed by the AI batch engine. It will appear here automatically — no action needed."
+                  : weekTrades.length < 3
+                  ? `You have ${weekTrades.length} trade${weekTrades.length === 1 ? '' : 's'} logged this week. Log at least 3 to unlock your weekly AI debrief.`
+                  : `Your AI debrief is automatically generated every Friday after market close. Keep logging — you have ${weekTrades.length} trade${weekTrades.length === 1 ? '' : 's'} so far this week.`}
+              </p>
+              {!endOfWeek && (
+                <p className="text-[10px] font-black uppercase tracking-widest text-black/20">
+                  Next report: {nextFriday}
                 </p>
-             </div>
-             <button 
-               onClick={handleGenerate}
-               className="group relative px-10 py-5 bg-black text-white rounded-full text-[11px] font-black uppercase tracking-[0.3em] overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl"
-             >
-                <div className="absolute inset-0 bg-gradient-to-tr from-violet-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="relative z-10 flex items-center gap-3">
-                  Initiate Daily Synthesis <ICONS.Zap className="w-4 h-4 text-amber-400" />
-                </span>
-             </button>
+              )}
+              {endOfWeek && weekTrades.length >= 3 && (
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-violet-500">
+                  <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                  Batch engine running · Check back shortly
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Disclaimer / Protocol Info */}
+      {/* Protocol cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-         <ProtocolCard 
-            icon={<ICONS.Eye className="w-4 h-4" />} 
-            title="Bias Detection" 
-            desc="Gemini monitors your emotional states vs yield to find hidden leak triggers."
-         />
-         <ProtocolCard 
-            icon={<ICONS.Target className="w-4 h-4" />} 
-            title="Pattern Audit" 
-            desc="Recognition of setup variants that yield consistently higher expectancy."
-         />
-         <ProtocolCard 
-            icon={<ICONS.Zap className="w-4 h-4" />} 
-            title="Protocol Lock" 
-            desc="To prevent over-analysis, reports are strictly capped at one per calendar day."
-         />
+        <ProtocolCard
+          icon={<ICONS.Eye className="w-4 h-4" />}
+          title="Auto-Generated"
+          desc="Every Friday at 18:00 UTC, the AI engine automatically processes your week's trades. No action needed — just trade and log."
+        />
+        <ProtocolCard
+          icon={<ICONS.Target className="w-4 h-4" />}
+          title="Pro Exclusive"
+          desc="Weekly AI synthesis is a Pro feature. The batch engine only runs for active Pro subscribers — your edge, unavailable to free users."
+        />
+        <ProtocolCard
+          icon={<ICONS.Zap className="w-4 h-4" />}
+          title="Cross-Device"
+          desc="Your insight is saved to your account. Open on phone, tablet, or desktop — same report, instantly available, no re-generation ever."
+        />
       </div>
     </div>
   );
 };
 
-const ProtocolCard = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
+const ProtocolCard = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
   <div className="apple-glass p-6 rounded-2xl border-white/60 space-y-3">
-     <div className="w-8 h-8 rounded-xl bg-black/5 flex items-center justify-center text-black/40">{icon}</div>
-     <h4 className="text-[10px] font-black uppercase tracking-widest text-black">{title}</h4>
-     <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase tracking-tight">{desc}</p>
+    <div className="w-8 h-8 rounded-xl bg-black/5 flex items-center justify-center text-black/40">{icon}</div>
+    <h4 className="text-[10px] font-black uppercase tracking-widest text-black">{title}</h4>
+    <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase tracking-tight">{desc}</p>
   </div>
 );
 
-// Improved Markdown formatter for high-fidelity report
-const formatMarkdown = (text: string) => {
-  return text
-    .replace(/^### (.*$)/gim, '<h3 className="mt-8 mb-4 flex items-center gap-3"><div className="w-1 h-3 bg-violet-600 rounded-full" /> $1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 className="text-xl font-black mb-6 mt-10">$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1 className="text-2xl font-black mb-8 border-b border-black/5 pb-4">$1</h1>')
-    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-    .replace(/\*(.*)\*/gim, '<em>$1</em>')
-    .replace(/^\- (.*$)/gim, '<li className="ml-2 mb-2">$1</li>')
-    .replace(/\n/gim, '<br />');
-};
+const formatMarkdown = (text: string) =>
+  text
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim,  '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim,   '<h1>$1</h1>')
+    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/gim,     '<em>$1</em>')
+    .replace(/^- (.*$)/gim,   '<li>$1</li>')
+    .replace(/\n/gim,         '<br />');
 
 export default AIPage;

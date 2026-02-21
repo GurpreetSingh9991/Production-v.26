@@ -30,3 +30,9 @@
   [headers.values]
     Cache-Control = "public, max-age=86400"
     Content-Type = "application/manifest+json"
+
+# ── Scheduled Functions ───────────────────────────────────────────────────────
+[functions."weekly-insights"]
+  schedule = "0 18 * * 5"
+  # Runs every Friday at 18:00 UTC (after US market close = 1pm EST / 2pm EDT)
+  # Generates AI insights for all Pro users automatically
