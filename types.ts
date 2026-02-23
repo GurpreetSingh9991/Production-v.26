@@ -1,103 +1,117 @@
-export type Side = 'LONG' | 'SHORT';
-export type Result = 'WIN' | 'LOSS' | 'BE';
-export type Grade = 'A+' | 'A' | 'B' | 'C';
-export type Bias = 'UP' | 'DOWN' | 'SIDEWAYS';
-export type SetupType = 'A' | 'B' | 'C' | 'D';
-export type AssetType = 'STOCKS' | 'FOREX' | 'FUTURES';
+<div align="center">
 
-export type PerformanceUnit = 'CURRENCY' | 'PERCENT' | 'R_MULTIPLE' | 'TICKS';
+# TradeFlow Studio
 
-export interface Account {
-  id: string;
-  name: string;
-  initialBalance: number;
-  currency: string;
-  color: string;
-  createdAt: string;
-}
+**The professional trading journal for serious traders.**  
+AI-powered insights · Multi-account management · Psychology tracking · Advanced analytics
 
-export interface Execution {
-  id: string;
-  price: number;
-  qty: number;
-  fees: number;
-  time: string;
-  type: 'ENTRY' | 'EXIT';
-}
+[Live App](https://app.tradeflowstudio.com) · [Landing Page](https://tradeflowstudio.com) · [Support](mailto:support@tradeflowstudio.com)
 
-export interface Mistake {
-  category: string;
-  impact: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  estimatedCost?: number;
-  description: string;
-  lessonLearned: string;
-  type?: string; // Legacy support
-  lesson?: string; // Legacy support
-}
+</div>
 
-export interface Psychology {
-  moodBefore?: number;
-  moodAfter?: number;
-  states?: string[];
-  notes?: string;
-}
+---
 
-export interface Trade {
-  id: string;
-  accountId: string; 
-  timestamp: string;
-  date: string;
-  symbol: string;
-  side: Side;
-  assetType: AssetType;
-  qty: number;
-  multiplier: number;
-  entryPrice: number;
-  exitPrice: number;
-  stopLossPrice: number;
-  targetPrice: number;
-  entryTime: string;
-  exitTime: string;
-  duration: string;
-  pnl: number;
-  rr: number;
-  result: Result;
-  resultGrade: Grade;
-  setupType: string;
-  weeklyBias: Bias;
-  narrative: string;
-  chartLink: string;
-  imageUrl?: string; 
-  tags?: string[];
-  
-  // Behavioral Tracking
-  followedPlan?: boolean;
-  plan?: string;
+## Tech Stack
 
-  // Advanced Tracking
-  executions?: Execution[];
-  average_entry?: number;
-  average_exit?: number;
-  total_fees?: number;
-  gross_pnl?: number;
-  net_pnl?: number;
+| Layer | Tech |
+|-------|------|
+| Frontend | React 18 + TypeScript + Tailwind CSS |
+| AI | Google Gemini 2.0 Flash |
+| Backend / Auth | Supabase (PostgreSQL + RLS) |
+| Hosting | Netlify |
+| Payments | Stripe |
 
-  // Additional fields from DB Schema
-  ticket?: string;
-  commission?: number;
-  swap?: number;
-  pips?: number;
-  
-  // Optional
-  images?: string[];
-  mistakes?: Mistake[];
-  psychology?: Psychology;
-}
+---
 
-export interface SyncConfig {
-  sheetUrl: string;
-  lastSynced: string | null;
-  autoSync: boolean;
-}
+## Local Development
 
-export type ViewType = 'DASHBOARD' | 'TRADES_LOG' | 'CALENDAR' | 'ANALYTICS' | 'PSYCHOLOGY' | 'AI_INTELLIGENCE' | 'SETTINGS';
+**Prerequisites:** Node.js 18+
+
+```bash
+npm install
+```
+
+Create `.env.local`:
+```
+GEMINI_API_KEY=your_gemini_key_from_aistudio.google.com
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_KEY=your_supabase_anon_key
+```
+
+```bash
+npm run dev
+```
+
+---
+
+## Supabase Setup
+
+Run **both SQL files** in your Supabase SQL Editor in this order:
+
+1. `setup.sql` — creates accounts and trades tables with RLS policies
+2. `profiles_setup.sql` — creates profiles table with plan column and auto-trigger
+
+---
+
+## Netlify Deployment
+
+Set these environment variables in Netlify → Site Settings → Environment Variables:
+
+```
+GEMINI_API_KEY     → your Gemini API key
+VITE_SUPABASE_URL  → https://your-project.supabase.co
+VITE_SUPABASE_KEY  → your Supabase anon key
+```
+
+Build command: `npm run build`  
+Publish directory: `dist`
+
+---
+
+## Subscription Plans
+
+| Feature | Free | Pro ($8.99/mo) |
+|---------|------|----------------|
+| Trades/month | 15 | Unlimited |
+| Accounts | 1 | Unlimited |
+| Analytics | — | ✓ |
+| Psychology Tracker | — | ✓ |
+| AI Insights (Gemini) | — | ✓ |
+| CSV Import | — | ✓ |
+| CSV Export | ✓ | ✓ |
+| Google Sheets Sync | — | ✓ |
+| Cloud Sync | ✓ | ✓ |
+
+---
+
+## Project Structure
+
+```
+├── App.tsx                  # Root component, routing, state
+├── components/
+│   ├── Auth.tsx             # Login / register
+│   ├── Dashboard.tsx        # Performance overview
+│   ├── TradeLog.tsx         # Trade list with tag filtering
+│   ├── TradeForm.tsx        # Add/edit trade form
+│   ├── Analytics.tsx        # Advanced analytics (Pro)
+│   ├── Psychology.tsx       # Psychology tracker (Pro)
+│   ├── AIPage.tsx           # Gemini AI insights (Pro)
+│   ├── Calendar.tsx         # P&L heat map calendar
+│   ├── AccountManager.tsx   # Multi-account manager
+│   ├── SyncSettings.tsx     # Settings, import/export, sync
+│   └── ProfileSettings.tsx  # User profile & plan info
+├── services/
+│   ├── supabase.ts          # Supabase client + auth helpers
+│   ├── planService.ts       # Plan gating + trade limits
+│   ├── storage.ts           # CSV export/import + local storage
+│   ├── sync.ts              # Google Sheets sync
+│   └── geminiService.ts     # Gemini AI integration
+├── setup.sql                # Accounts + trades tables + RLS
+└── profiles_setup.sql       # Profiles table + plan trigger
+```
+
+---
+
+## Support
+
+Email: support@tradeflowstudio.com

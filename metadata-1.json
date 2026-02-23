@@ -1,2 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>TradeFlow | Studio</title>
+    <!-- Apple App Store / PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TradeFlow">
+    <meta name="theme-color" content="#f0f0f0">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Favicon & PWA Icons -->
+    <link rel="icon" type="image/png" href="/icon.png?v=2">
+    <link rel="apple-touch-icon" href="/icon.png?v=2">
+    <link rel="apple-touch-icon" sizes="120x120" href="/icon.png?v=2">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon.png?v=2">
+    <link rel="manifest" href="/manifest.json">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sar: env(safe-area-inset-right);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+            --nav-height: 64px;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #D6D6D6;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            overflow: hidden; 
+            min-height: 100dvh;
+            height: 100dvh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+            position: fixed; 
+            overflow-x: hidden;
+        }
+        #root {
+            min-height: 100dvh;
+            height: 100dvh;
+            width: 100vw;
+            overflow-x: hidden;
+        }
 
-{}
+        /* Standardized Desktop Panels */
+        .tf-sidebar-rail {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            height: 100dvh;
+            width: 64px;
+            background: #1a1a1a;
+            border-radius: 0;
+            padding: 16px 0;
+            z-index: 201;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tf-sidebar {
+            position: fixed;
+            top: 16px;
+            bottom: 16px;
+            height: calc(100dvh - 32px);
+            z-index: 200;
+            pointer-events: auto;
+            border-radius: 2rem;
+        }
+
+        .apple-glass {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000;
+            will-change: transform, opacity;
+            clip-path: inset(0 round 2rem);
+        }
+
+        /* High Fidelity Frosted Glass Effect - Seamless Fade Version */
+        .frosted-glass-header {
+            backdrop-filter: blur(28px) saturate(200%);
+            -webkit-backdrop-filter: blur(28px) saturate(200%);
+            background: rgba(242, 242, 242, 0.65);
+            border-bottom: none;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .frosted-glass-header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(
+                to bottom,
+                rgba(242, 242, 242, 0.18) 0%,
+                transparent 100%
+            );
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        .frosted-glass-nav {
+            backdrop-filter: blur(28px) saturate(200%);
+            -webkit-backdrop-filter: blur(28px) saturate(200%);
+            background: rgba(242, 242, 242, 0.65);
+            border-top: none;
+            position: relative;
+            z-index: 100;
+        }
+
+        .frosted-glass-nav::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(
+                to top,
+                rgba(242, 242, 242, 0.18) 0%,
+                transparent 100%
+            );
+            pointer-events: none;
+            z-index: 99;
+        }
+        
+        .safe-area-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+        }
+
+        /* Safe Area Utilities */
+        .pt-safe { padding-top: var(--sat); }
+        .pb-safe { padding-bottom: var(--sab); }
+        .pl-safe { padding-left: var(--sal); }
+        .pr-safe { padding-right: var(--sar); }
+        .mt-safe { margin-top: var(--sat); }
+        .mb-safe { margin-bottom: var(--sab); }
+
+        .pb-nav-safe { 
+            padding-bottom: calc(var(--nav-height) + var(--sab) + 16px); 
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 0px;
+        }
+        
+        .squircle {
+            border-radius: 2rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-reagle {
+            animation: fadeIn 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+
+        .touch-scroll {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.95.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.564.0",
+    "path": "https://esm.sh/path@^0.12.7",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.42.0"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

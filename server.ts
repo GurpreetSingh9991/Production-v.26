@@ -1,71 +1,38 @@
-import express from "express";
-import { createServer as createViteServer } from "vite";
-import archiver from "archiver";
-import fs from "fs";
-import path from "path";
+# ── TradeFlow Studio — Netlify Configuration ──────────────────────────────────
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+[build]
+  command = "npm run build"
+  publish = "dist"
 
-  // API Route to download the project as ZIP
-  app.get("/api/download-project", (req, res) => {
-    const archive = archiver("zip", {
-      zlib: { level: 9 }, // Sets the compression level.
-    });
+# SPA routing: all paths serve index.html (required for React Router)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
-    res.attachment("project.zip");
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
-    archive.on("error", (err) => {
-      res.status(500).send({ error: err.message });
-    });
+# Cache icons and assets aggressively
+[[headers]]
+  for = "/icon.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
 
-    archive.pipe(res);
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type = "application/manifest+json"
 
-    // Append files from the root directory, excluding node_modules and other artifacts
-    const rootDir = process.cwd();
-    const files = fs.readdirSync(rootDir);
-
-    files.forEach((file) => {
-      const filePath = path.join(rootDir, file);
-      const stats = fs.statSync(filePath);
-
-      if (stats.isDirectory()) {
-        if (file !== "node_modules" && file !== "dist" && file !== ".git" && file !== ".next") {
-          archive.directory(filePath, file);
-        }
-      } else {
-        // Include all files except potentially sensitive ones or large binaries if any
-        archive.file(filePath, { name: file });
-      }
-    });
-
-    archive.finalize();
-  });
-
-  // API routes FIRST
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
-  });
-
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    // Production serving logic
-    app.use(express.static("dist"));
-    app.get("*", (req, res) => {
-      res.sendFile(path.resolve("dist/index.html"));
-    });
-  }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-}
-
-startServer();
+# ── Scheduled Functions ───────────────────────────────────────────────────────
+[functions."weekly-insights"]
+  schedule = "0 18 * * 5"
+  # Runs every Friday at 18:00 UTC (after US market close = 1pm EST / 2pm EDT)
+  # Generates AI insights for all Pro users automatically

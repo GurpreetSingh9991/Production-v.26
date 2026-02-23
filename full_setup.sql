@@ -1,126 +1,229 @@
--- ============================================================
--- TradeFlow Studio — Full Database Setup
--- Run this once in your Supabase SQL Editor
--- ============================================================
+import { Trade, Side, Result, Grade, Bias, AssetType } from '../types';
 
--- 1. Accounts Table
-CREATE TABLE IF NOT EXISTS public.accounts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    name TEXT NOT NULL,
-    initial_balance NUMERIC DEFAULT 0 NOT NULL,
-    currency TEXT DEFAULT 'USD' NOT NULL,
-    color TEXT DEFAULT '#000000',
-    created_at TIMESTAMPTZ DEFAULT now()
-);
+const STORAGE_KEY = 'precision_trader_journal_data';
 
--- 2. Trades Table
-CREATE TABLE IF NOT EXISTS public.trades (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    account_id UUID REFERENCES public.accounts(id) ON DELETE SET NULL,
-    timestamp TIMESTAMPTZ DEFAULT now(),
-    date DATE NOT NULL,
-    symbol TEXT NOT NULL,
-    side TEXT CHECK (side IN ('LONG', 'SHORT')) NOT NULL,
-    qty NUMERIC DEFAULT 1,
-    entry_price NUMERIC DEFAULT 0,
-    exit_price NUMERIC DEFAULT 0,
-    pnl NUMERIC DEFAULT 0,
-    gross_pnl NUMERIC DEFAULT 0,
-    total_fees NUMERIC DEFAULT 0,
-    setup_type TEXT DEFAULT '',
-    result_grade TEXT DEFAULT '',
-    tags TEXT[] DEFAULT '{}',
-    narrative TEXT DEFAULT '',
-    rr NUMERIC DEFAULT 0,
-    followed_plan BOOLEAN DEFAULT false,
-    pre_mood INTEGER,
-    post_mood INTEGER,
-    emotional_tags TEXT[] DEFAULT '{}',
-    multiplier NUMERIC DEFAULT 1,
-    entry_time TEXT DEFAULT '09:30',
-    exit_time TEXT DEFAULT '10:00',
-    duration TEXT DEFAULT '',
-    executions JSONB DEFAULT '[]',
-    image_urls TEXT[] DEFAULT '{}'
-);
+export const saveTrades = (trades: Trade[]) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+};
 
--- 3. Profiles Table (plan + Stripe)
-CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    plan TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro')),
-    stripe_customer_id TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+export const loadTrades = (): Trade[] => {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (!data) return [];
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    console.error("Failed to parse trade data", e);
+    return [];
+  }
+};
 
--- 4. Add missing columns if upgrading from older schema
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='plan') THEN
-        ALTER TABLE public.profiles ADD COLUMN plan TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro'));
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='stripe_customer_id') THEN
-        ALTER TABLE public.profiles ADD COLUMN stripe_customer_id TEXT;
-    END IF;
-END $$;
+const CSV_COLUMNS = [
+  'Date', 'Symbol', 'Side', 'Qty', 'Entry Price', 'Exit Price', 
+  'Gross P&L', 'Fees', 'Net P&L', 'Tags', 'Setup Type', 'Result', 
+  'Grade', 'RR', 'Narrative'
+];
 
--- 5. Auto-create profile row on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (id)
-    VALUES (NEW.id)
-    ON CONFLICT (id) DO NOTHING;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+export const exportToCSV = (trades: Trade[]) => {
+  if (trades.length === 0) return;
+  
+  const headers = CSV_COLUMNS.join(',');
+  const rows = trades.map(t => {
+    // Calculate gross if missing
+    const fees = t.total_fees || 0;
+    const gross = t.gross_pnl ?? (t.pnl + fees);
+    const tagsString = (t.tags || []).join('; ');
+    const escapedNarrative = (t.narrative || '').replace(/"/g, '""');
 
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+    return [
+      t.date,
+      t.symbol,
+      t.side,
+      t.qty,
+      t.entryPrice,
+      t.exitPrice,
+      gross.toFixed(2),
+      fees.toFixed(2),
+      t.pnl.toFixed(2),
+      `"${tagsString.replace(/"/g, '""')}"`,
+      t.setupType,
+      t.result,
+      t.resultGrade,
+      t.rr,
+      `"${escapedNarrative}"`
+    ].join(',');
+  });
+  
+  const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(headers + "\n" + rows.join('\n'));
+  const link = document.createElement("a");
+  const fileNameDate = new Date().toISOString().split('T')[0];
+  link.setAttribute("href", csvContent);
+  link.setAttribute("download", `trades_${fileNameDate}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
--- 6. Enable Row Level Security
-ALTER TABLE public.accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.trades   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+const COLUMN_ALIASES: Record<string, string> = {
+  'date': 'date', 'time': 'date', 'trade date': 'date', 'close date': 'date', 'open date': 'date', 'execution time': 'date', 'open time': 'date', 'close time': 'date',
+  'symbol': 'symbol', 'instrument': 'symbol', 'ticker': 'symbol', 'market': 'symbol', 'contract': 'symbol', 'asset': 'symbol', 'item': 'symbol',
+  'side': 'side', 'direction': 'side', 'type': 'side', 'position': 'side', 'action': 'side', 'buy/sell': 'side', 'trans. type': 'side',
+  'qty': 'qty', 'quantity': 'qty', 'shares': 'qty', 'size': 'qty', 'contracts': 'qty', 'volume': 'qty', 'units': 'qty',
+  'entry price': 'entryPrice', 'entry': 'entryPrice', 'open price': 'entryPrice', 'avg entry': 'entryPrice', 'buy price': 'entryPrice', 'avg. entry price': 'entryPrice', 'trade price': 'entryPrice', 'price': 'entryPrice',
+  'exit price': 'exitPrice', 'exit': 'exitPrice', 'close price': 'exitPrice', 'avg exit': 'exitPrice', 'sell price': 'exitPrice', 'avg. exit price': 'exitPrice', 'closeprice': 'exitPrice',
+  'net p&l': 'pnl', 'pnl': 'pnl', 'p&l': 'pnl', 'profit/loss': 'pnl', 'net profit': 'pnl', 'realized p&l': 'pnl', 'net p/l': 'pnl', 'amount': 'pnl', 'gain/loss': 'pnl', 'profit': 'pnl', 'realized p/l': 'pnl',
+  'setup type': 'setupType', 'setup': 'setupType', 'strategy': 'setupType',
+  'grade': 'resultGrade', 'rating': 'resultGrade', 'score': 'resultGrade',
+  'notes': 'narrative', 'narrative': 'narrative', 'comments': 'narrative', 'description': 'narrative',
+  'tags': 'tags', 'label': 'tags', 'labels': 'tags',
+  'rr': 'rr', 'r:r': 'rr', 'risk/reward': 'rr', 'r multiple': 'rr',
+  'fees': 'total_fees', 'commission': 'total_fees', 'fee': 'total_fees', 'commissions': 'total_fees', 'swap': 'total_fees', 'taxes': 'total_fees',
+  'asset type': 'assetType', 'asset class': 'assetType', 'security type': 'assetType',
+};
 
--- 7. RLS Policies
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage their own accounts') THEN
-        CREATE POLICY "Users can manage their own accounts"
-        ON public.accounts FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage their own trades') THEN
-        CREATE POLICY "Users can manage their own trades"
-        ON public.trades FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-    END IF;
-    -- READ: users can see their own profile
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read their own profile') THEN
-        CREATE POLICY "Users can read their own profile"
-        ON public.profiles FOR SELECT USING (auth.uid() = id);
-    END IF;
+const normalizeSide = (val: string): 'LONG' | 'SHORT' => {
+  const v = (val || '').toUpperCase().trim();
+  if (['BUY', 'LONG', 'BOT', 'B', 'BOUGHT', 'BUY TO OPEN', 'BUY TO CLOSE', 'ENTRY LONG'].includes(v)) return 'LONG';
+  if (['SELL', 'SHORT', 'SLD', 'S', 'SOLD', 'SELL TO OPEN', 'SELL TO CLOSE', 'ENTRY SHORT'].includes(v)) return 'SHORT';
+  return 'LONG';
+};
 
-    -- INSERT: auto-trigger creates the row, but allow client insert too (for edge cases)
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert their own profile') THEN
-        CREATE POLICY "Users can insert their own profile"
-        ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
-    END IF;
+const normalizeAssetType = (val: string): AssetType => {
+  const v = (val || '').toUpperCase().trim();
+  if (v.includes('FOREX') || v.includes('CURRENCY') || v.includes('FX')) return 'FOREX';
+  if (v.includes('FUTURE') || v.includes('FUT')) return 'FUTURES';
+  return 'STOCKS';
+};
 
-    -- UPDATE: users can update ONLY non-billing fields (display name, avatar, etc.)
-    -- The plan and stripe_customer_id columns can ONLY be changed by the service role
-    -- (used by the Stripe webhook Netlify function). This prevents self-upgrading.
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own non-billing profile fields') THEN
-        CREATE POLICY "Users can update their own non-billing profile fields"
-        ON public.profiles FOR UPDATE
-        USING (auth.uid() = id)
-        WITH CHECK (
-            auth.uid() = id
-            -- Disallow changing plan or stripe_customer_id from the client
-            AND plan = (SELECT plan FROM public.profiles WHERE id = auth.uid())
-            AND (stripe_customer_id IS NOT DISTINCT FROM (SELECT stripe_customer_id FROM public.profiles WHERE id = auth.uid()))
-        );
-    END IF;
-END $$;
+export const parseCSV = (csvText: string, accountId: string = ''): Trade[] => {
+  const lines = csvText.split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  const rawHeaders = lines[0].split(',').map(h =>
+    h.trim().toLowerCase().replace(/^["'\uFEFF]+|["']+$/g, '')
+  );
+
+  const colIndex: Record<string, number> = {};
+  rawHeaders.forEach((h, i) => {
+    const mapped = COLUMN_ALIASES[h];
+    if (mapped && !(mapped in colIndex)) {
+      colIndex[mapped] = i;
+    }
+  });
+
+  const required = ['date', 'symbol', 'pnl'];
+  const missing = required.filter(r => !(r in colIndex));
+  if (missing.length > 0) {
+    throw new Error(
+      `Could not find required columns: ${missing.join(', ')}.\n` +
+      `Found headers: ${rawHeaders.slice(0, 8).join(', ')}...\n` +
+      `Your CSV needs at least: Date, Symbol, and P&L (or Net P&L) columns.`
+    );
+  }
+
+  const getCell = (row: string[], field: string, fallback = ''): string => {
+    const idx = colIndex[field];
+    if (idx === undefined || idx >= row.length) return fallback;
+    return (row[idx] || fallback).trim().replace(/^["']|["']$/g, '');
+  };
+
+  const parseNum = (val: string): number => {
+    if (!val) return 0;
+    // Handle parentheses for negative numbers: (100.00) -> -100.00
+    let cleaned = val.trim();
+    if (cleaned.startsWith('(') && cleaned.endsWith(')')) {
+      cleaned = '-' + cleaned.slice(1, -1);
+    }
+    cleaned = cleaned.replace(/[$,\s]/g, '');
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  };
+
+  const trades: Trade[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    // Handle quoted CSV fields properly
+    const row: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (const char of lines[i]) {
+      if (char === '"') { inQuotes = !inQuotes; }
+      else if (char === ',' && !inQuotes) { row.push(current); current = ''; }
+      else { current += char; }
+    }
+    row.push(current);
+    if (row.length < 3) continue;
+
+    const symbol = getCell(row, 'symbol', '').toUpperCase();
+    if (!symbol || symbol.includes('BALANCE') || symbol.includes('DEPOSIT')) continue;
+
+    const pnlRaw = parseNum(getCell(row, 'pnl', '0'));
+    if (pnlRaw === 0 && symbol === '') continue;
+
+    const entryPrice = parseNum(getCell(row, 'entryPrice', '0'));
+    const exitPrice  = parseNum(getCell(row, 'exitPrice',  '0'));
+    const qty        = parseNum(getCell(row, 'qty', '1')) || 1;
+    const rr         = parseNum(getCell(row, 'rr',  '0'));
+    const fees       = parseNum(getCell(row, 'total_fees', '0')) + parseNum(getCell(row, 'swap', '0')) + parseNum(getCell(row, 'taxes', '0'));
+    const assetType  = normalizeAssetType(getCell(row, 'assetType', 'STOCKS'));
+    const result: Result = pnlRaw > 0 ? 'WIN' : pnlRaw < 0 ? 'LOSS' : 'BE';
+
+    const rawDate = getCell(row, 'date', new Date().toISOString().split('T')[0]);
+    // Normalize date to YYYY-MM-DD
+    let normalizedDate = rawDate;
+    try {
+      // Handle MT5/MT4 formats like 2024.05.20 14:30:00 or 20.05.2024
+      const dateOnly = rawDate.split(' ')[0]; 
+      if (dateOnly.includes('.') || dateOnly.includes('/')) {
+        const parts = dateOnly.split(/[./-]/);
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+             normalizedDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+          } else if (parts[2].length === 4) {
+             normalizedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+        }
+      }
+      
+      const d = new Date(normalizedDate);
+      if (!isNaN(d.getTime())) {
+        normalizedDate = d.toISOString().split('T')[0];
+      }
+    } catch { /* keep raw */ }
+
+    trades.push({
+      id: crypto.randomUUID(),
+      accountId,
+      timestamp: new Date().toISOString(),
+      date: normalizedDate,
+      symbol,
+      side: normalizeSide(getCell(row, 'side', 'LONG')),
+      assetType,
+      qty,
+      multiplier: 1,
+      entryPrice,
+      exitPrice,
+      stopLossPrice: 0,
+      targetPrice: 0,
+      entryTime: '09:30',
+      exitTime: '16:00',
+      duration: '0m',
+      pnl: pnlRaw,
+      rr,
+      result,
+      resultGrade: (getCell(row, 'resultGrade', 'B') as Grade) || 'B',
+      setupType: getCell(row, 'setupType', 'A') || 'A',
+      weeklyBias: 'SIDEWAYS',
+      narrative: getCell(row, 'narrative', ''),
+      chartLink: '',
+      tags: getCell(row, 'tags') ? getCell(row, 'tags').split(';').map((t: string) => t.trim()).filter(Boolean) : [],
+      total_fees: fees,
+      gross_pnl: pnlRaw + fees,
+      net_pnl: pnlRaw,
+      executions: [],
+      mistakes: [],
+      psychology: { moodBefore: 3, moodAfter: 3, states: [], notes: '' },
+      followedPlan: true,
+      plan: '',
+    });
+  }
+  return trades;
+};

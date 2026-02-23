@@ -1,117 +1,36 @@
-<div align="center">
+-- ============================================================
+-- TradeFlow Studio — Weekly AI Insights Migration
+-- Run in Supabase SQL Editor after migration_security_fix.sql
+-- ============================================================
 
-# TradeFlow Studio
+-- Add insight caching columns to profiles table
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS ai_insight_content TEXT,
+  ADD COLUMN IF NOT EXISTS ai_insight_week    TEXT,   -- stores ISO week key e.g. "2025-W08"
+  ADD COLUMN IF NOT EXISTS ai_insight_updated TIMESTAMPTZ;
 
-**The professional trading journal for serious traders.**  
-AI-powered insights · Multi-account management · Psychology tracking · Advanced analytics
+-- Allow users to update ONLY their own insight columns (not plan/stripe)
+-- Drop old update policy first, recreate it with insight fields allowed
+DROP POLICY IF EXISTS "Users can update their own non-billing profile fields" ON public.profiles;
 
-[Live App](https://app.tradeflowstudio.com) · [Landing Page](https://tradeflowstudio.com) · [Support](mailto:support@tradeflowstudio.com)
+CREATE POLICY "Users can update their own non-billing profile fields"
+ON public.profiles FOR UPDATE
+USING (auth.uid() = id)
+WITH CHECK (
+    auth.uid() = id
+    -- plan and stripe_customer_id remain locked — only webhook can change these
+    AND plan = (SELECT plan FROM public.profiles WHERE id = auth.uid())
+    AND (stripe_customer_id IS NOT DISTINCT FROM (
+        SELECT stripe_customer_id FROM public.profiles WHERE id = auth.uid()
+    ))
+    -- ai_insight_* fields ARE allowed to be updated by the user
+);
 
-</div>
+-- Allow upsert (insert-or-replace) on profiles for ai_insight_* fields
+-- The upsert from the frontend uses the anon key, so it hits this RLS.
+-- We allow it since insight fields are NOT billing-sensitive.
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 
----
-
-## Tech Stack
-
-| Layer | Tech |
-|-------|------|
-| Frontend | React 18 + TypeScript + Tailwind CSS |
-| AI | Google Gemini 2.0 Flash |
-| Backend / Auth | Supabase (PostgreSQL + RLS) |
-| Hosting | Netlify |
-| Payments | Stripe |
-
----
-
-## Local Development
-
-**Prerequisites:** Node.js 18+
-
-```bash
-npm install
-```
-
-Create `.env.local`:
-```
-GEMINI_API_KEY=your_gemini_key_from_aistudio.google.com
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_KEY=your_supabase_anon_key
-```
-
-```bash
-npm run dev
-```
-
----
-
-## Supabase Setup
-
-Run **both SQL files** in your Supabase SQL Editor in this order:
-
-1. `setup.sql` — creates accounts and trades tables with RLS policies
-2. `profiles_setup.sql` — creates profiles table with plan column and auto-trigger
-
----
-
-## Netlify Deployment
-
-Set these environment variables in Netlify → Site Settings → Environment Variables:
-
-```
-GEMINI_API_KEY     → your Gemini API key
-VITE_SUPABASE_URL  → https://your-project.supabase.co
-VITE_SUPABASE_KEY  → your Supabase anon key
-```
-
-Build command: `npm run build`  
-Publish directory: `dist`
-
----
-
-## Subscription Plans
-
-| Feature | Free | Pro ($8.99/mo) |
-|---------|------|----------------|
-| Trades/month | 15 | Unlimited |
-| Accounts | 1 | Unlimited |
-| Analytics | — | ✓ |
-| Psychology Tracker | — | ✓ |
-| AI Insights (Gemini) | — | ✓ |
-| CSV Import | — | ✓ |
-| CSV Export | ✓ | ✓ |
-| Google Sheets Sync | — | ✓ |
-| Cloud Sync | ✓ | ✓ |
-
----
-
-## Project Structure
-
-```
-├── App.tsx                  # Root component, routing, state
-├── components/
-│   ├── Auth.tsx             # Login / register
-│   ├── Dashboard.tsx        # Performance overview
-│   ├── TradeLog.tsx         # Trade list with tag filtering
-│   ├── TradeForm.tsx        # Add/edit trade form
-│   ├── Analytics.tsx        # Advanced analytics (Pro)
-│   ├── Psychology.tsx       # Psychology tracker (Pro)
-│   ├── AIPage.tsx           # Gemini AI insights (Pro)
-│   ├── Calendar.tsx         # P&L heat map calendar
-│   ├── AccountManager.tsx   # Multi-account manager
-│   ├── SyncSettings.tsx     # Settings, import/export, sync
-│   └── ProfileSettings.tsx  # User profile & plan info
-├── services/
-│   ├── supabase.ts          # Supabase client + auth helpers
-│   ├── planService.ts       # Plan gating + trade limits
-│   ├── storage.ts           # CSV export/import + local storage
-│   ├── sync.ts              # Google Sheets sync
-│   └── geminiService.ts     # Gemini AI integration
-├── setup.sql                # Accounts + trades tables + RLS
-└── profiles_setup.sql       # Profiles table + plan trigger
-```
-
----
-
-## Support
-
-Email: support@tradeflowstudio.com
+CREATE POLICY "Users can insert their own profile"
+ON public.profiles FOR INSERT
+WITH CHECK (auth.uid() = id);
