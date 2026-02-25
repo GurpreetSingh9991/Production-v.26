@@ -349,7 +349,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     };
   }, [filteredByDateTrades, activeAccount, accounts, displayUnit, startingEquity]);
 
-  const renderTradeDetail = (trade: Trade) => {
+  // ✅ FIX: Memoize renderTradeDetail to prevent recreation on every render
+  const renderTradeDetail = React.useCallback((trade: Trade) => {
     let displayPnL = trade.pnl;
     let prefix = trade.pnl >= 0 ? '+' : '';
     let suffix = '';
@@ -391,7 +392,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
         </div>
       </div>
     );
-  };
+  }, [displayUnit, startingEquity, onTradeEdit]);
 
   const visibleAlerts = useMemo(() => {
     return stats?.activeAlerts.filter(a => !dismissedAlerts.has(a.id)) || [];
@@ -646,7 +647,12 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
           </div>
 
           <div className="animate-in fade-in slide-in-from-bottom-5 duration-700">
-            <TradeCalendar trades={filteredByDateTrades} />
+            <TradeCalendar 
+              trades={filteredByDateTrades} 
+              onTradeEdit={onTradeEdit}
+              onTradeDelete={onTradeDelete}
+              renderTradeDetail={renderTradeDetail}
+            />
           </div>
 
           <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -655,7 +661,11 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
               <span className="text-[9px] font-black text-black/30 uppercase tracking-widest">{filteredByDateTrades.length} Total</span>
             </div>
             <div className="space-y-3">
-              {[...filteredByDateTrades].reverse().slice(0, 10).map(renderTradeDetail)}
+              {/* ✅ FIX: Sort by date descending (latest first), then take first 10 */}
+              {[...filteredByDateTrades]
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .slice(0, 10)
+                .map(renderTradeDetail)}
             </div>
           </div>
         </>

@@ -1163,16 +1163,34 @@ const App: React.FC = () => {
           accounts={accounts}
           activeAccountId={activeAccountId !== 'ALL' ? activeAccountId : (accounts[0]?.id || '')}
           onSave={async (t) => {
-            if (!editingTrade && session?.user) {
-              const check = await canUserAddTrade(session.user.id);
-              if (!check.allowed) {
-                setUpgradePrompt('trades');
-                return;
+            try {
+              // Check trade limit for free users (existing logic preserved)
+              if (!editingTrade && session?.user) {
+                const check = await canUserAddTrade(session.user.id);
+                if (!check.allowed) {
+                  setUpgradePrompt('trades');
+                  return;
+                }
               }
+              
+              // Update local state immediately (existing logic preserved)
+              const updated = editingTrade ? trades.map(old => old.id === t.id ? t : old) : [t, ...trades];
+              setTrades(updated); 
+              saveTrades(updated);
+              
+              // ✅ FIX: Close form BEFORE sync (fixes "form doesn't close" issue)
+              setIsFormOpen(false); 
+              setEditingTrade(null);
+              
+              // ✅ FIX: Sync in background (fixes dashboard lag)
+              syncSingleTradeToSupabase(t).catch(err => {
+                console.error('Background sync failed:', err);
+              });
+              
+            } catch (error) {
+              console.error('Save error:', error);
+              alert('Failed to save trade. Please try again.');
             }
-            const updated = editingTrade ? trades.map(old => old.id === t.id ? t : old) : [t, ...trades];
-            setTrades(updated); saveTrades(updated); await syncSingleTradeToSupabase(t);
-            setIsFormOpen(false); setEditingTrade(null);
           }} 
           onCancel={() => { setIsFormOpen(false); setEditingTrade(null); }} 
           initialData={editingTrade} 
