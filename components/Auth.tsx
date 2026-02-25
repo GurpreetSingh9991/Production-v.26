@@ -79,7 +79,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         
         <div className="w-full max-w-md apple-glass rounded-[3.5rem] p-10 md:p-14 ambient-shadow relative overflow-hidden animate-in zoom-in-95 duration-700 border-white/40 text-center">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-black rounded-[1.5rem] flex items-center justify-center mb-6 shadow-2xl animate-bounce">
+            <div className="w-16 h-16 bg-black rounded-[1.5rem] flex items-center justify-center mb-6 shadow-2xl" >
                <ICONS.Mail className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-black tracking-tighter text-black leading-none mb-4">Check Your Inbox</h2>

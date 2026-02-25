@@ -191,7 +191,10 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     if (displayUnit === 'PERCENT') {
       return startingEquity > 0 ? (pnl / startingEquity) * 100 : 0;
     } else if (displayUnit === 'R_MULTIPLE') {
-      return trade?.rr || 0;
+      // ✅ FIX: If we have a specific trade, use its RR
+      if (trade) return trade.rr || 0;
+      // For aggregate calculations, pnl already contains the R sum
+      return pnl;
     } else if (displayUnit === 'TICKS') {
       if (!trade) return 0;
       return (Math.abs(trade.exitPrice - trade.entryPrice)) * (trade.multiplier || 1);
@@ -206,7 +209,12 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     const sortedTrades = [...currentTrades].sort((a, b) => new Date(a.date + 'T12:00:00').getTime() - new Date(b.date + 'T12:00:00').getTime());
     const winTrades = currentTrades.filter(t => t.result === 'WIN');
     const lossTrades = currentTrades.filter(t => t.result === 'LOSS');
-    const totalNetPnL = currentTrades.reduce((sum, t) => sum + t.pnl, 0);
+    
+    // ✅ FIX: Calculate totals based on display unit
+    const totalNetPnL = displayUnit === 'R_MULTIPLE'
+      ? currentTrades.reduce((sum, t) => sum + (t.rr || 0), 0)  // Sum of R values
+      : currentTrades.reduce((sum, t) => sum + t.pnl, 0);        // Sum of $ values
+    
     const avgPnL = totalNetPnL / currentTrades.length;
     const winRate = currentTrades.length ? (winTrades.length / currentTrades.length) * 100 : 0;
     

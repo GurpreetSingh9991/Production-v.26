@@ -15,6 +15,7 @@ import SyncSettings from './components/SyncSettings';
 import ProfileSettings from './components/ProfileSettings';
 import AccountManager from './components/AccountManager';
 import Auth from './components/Auth';
+import LoadingBar from './components/LoadingBar';
 import { TermsAcceptanceGate } from './components/Legal';
 import { Session } from '@supabase/supabase-js';
 
@@ -467,6 +468,19 @@ const App: React.FC = () => {
       
       setSession(s);
 
+      // Pre-seed UI instantly from localStorage so dashboard never shows empty
+      // Remote data will overwrite this once fetched (usually <500ms)
+      if (s) {
+        const cachedAccounts = localStorage.getItem('tf_accounts');
+        const cachedTrades = loadTrades();
+        if (cachedAccounts) {
+          try { setAccounts(JSON.parse(cachedAccounts)); } catch (_) {}
+        }
+        if (cachedTrades.length > 0) {
+          setTrades(cachedTrades);
+        }
+      }
+
       // Terms acceptance: only required for users who signed up AFTER Feb 1 2025
       // Check localStorage first (fast), then Supabase as source of truth
       if (s) {
@@ -504,11 +518,49 @@ const App: React.FC = () => {
 
       client.auth.onAuthStateChange(async (event, newSession) => {
         if (event === 'SIGNED_OUT') {
+          // Clear all state immediately so sign-in starts clean
           setSession(null);
           setTrades([]);
           setAccounts([]);
           setUserPlan('free');
+          setIsAuthLoading(false);
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // Show loading bar immediately — prevents empty dashboard flash
+          setIsAuthLoading(true);
+          setSession(newSession);
+
+          if (newSession) {
+            // Small delay to ensure session is fully ready in client
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            try {
+              const [remoteAccounts, remoteTrades, plan] = await Promise.all([
+                getSupabaseAccounts(),
+                getSupabaseTrades(),
+                getUserPlan(newSession.user.id)
+              ]);
+
+              setUserPlan(plan);
+
+              if (remoteAccounts) {
+                setAccounts(remoteAccounts);
+                localStorage.setItem('tf_accounts', JSON.stringify(remoteAccounts));
+              }
+
+              if (remoteTrades) {
+                setTrades(remoteTrades);
+                saveTrades(remoteTrades);
+              }
+            } catch (error) {
+              console.error('Failed to load data after sign-in:', error);
+            } finally {
+              setIsAuthLoading(false);
+            }
+          } else {
+            setIsAuthLoading(false);
+          }
         } else if (newSession) {
+          // Other events (just update session)
           setSession(newSession);
           const plan = await getUserPlan(newSession.user.id);
           setUserPlan(plan);
@@ -603,10 +655,11 @@ const App: React.FC = () => {
   };
 
   const handleDeleteTrade = async (id: string) => {
-    await deleteSupabaseTrade(id);
+    // Update UI immediately, sync in background
     const updated = trades.filter(t => t.id !== id);
     setTrades(updated);
-    saveTrades(updated);
+    requestAnimationFrame(() => saveTrades(updated));
+    deleteSupabaseTrade(id).catch(err => console.error('Delete sync failed:', err));
   };
 
   const handleSaveAccount = async (newAccounts: Account[]) => {
@@ -719,12 +772,7 @@ const App: React.FC = () => {
   };
 
   if (isAuthLoading) {
-    return (
-      <div className="min-h-[100dvh] bg-[#D6D6D6] flex flex-col items-center justify-center overflow-hidden">
-        <ICONS.Logo className="w-12 h-12 animate-pulse mb-6 opacity-40" />
-        <p className="text-[10px] font-black text-black opacity-40 uppercase tracking-[0.3em]">Initializing Studio...</p>
-      </div>
-    );
+    return <LoadingBar message="Initializing Studio..." />;
   }
 
   if (!session) return <Auth onAuthSuccess={initializeApp} />;
@@ -1173,10 +1221,11 @@ const App: React.FC = () => {
                 }
               }
               
-              // Update local state immediately (existing logic preserved)
+              // Update local state immediately — UI refreshes instantly
               const updated = editingTrade ? trades.map(old => old.id === t.id ? t : old) : [t, ...trades];
-              setTrades(updated); 
-              saveTrades(updated);
+              setTrades(updated);
+              // Defer heavy localStorage write so UI paints first
+              requestAnimationFrame(() => saveTrades(updated));
               
               // ✅ FIX: Close form BEFORE sync (fixes "form doesn't close" issue)
               setIsFormOpen(false); 
