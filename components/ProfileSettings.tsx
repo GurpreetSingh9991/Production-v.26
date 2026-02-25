@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ICONS } from '../constants';
 import { getSupabaseClient, getSession } from '../services/supabase';
 import { getTradeCountThisMonth, startStripeCheckout } from '../services/planService';
+import { LegalModal } from './Legal';
+type LegalDoc = 'privacy' | 'terms';
 
 interface ProfileSettingsProps {
   onClose: () => void;
@@ -13,6 +15,9 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usage, setUsage] = useState<number>(0);
+  const [openLegal, setOpenLegal] = useState<LegalDoc | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   
   // Developer-only gate: only show dev tools to the account owner.
   // Set VITE_OWNER_EMAIL=your@email.com in Netlify env vars / .env.local
@@ -115,6 +120,27 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
     }
   };
 
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    try {
+      const s = await getSession();
+      if (!s?.user?.id) throw new Error('Not logged in');
+      const response = await fetch('/.netlify/functions/customer-portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: s.user.id }),
+      });
+      const { url, error: portalError } = await response.json();
+      if (portalError) throw new Error(portalError);
+      if (url) window.location.href = url;
+    } catch (err: any) {
+      setError(err.message || 'Could not open cancellation portal. Please contact support@tradeflowstudio.com');
+    } finally {
+      setIsCancelling(false);
+      setShowCancelConfirm(false);
+    }
+  };
+
   const handleDownloadProject = async () => {
     setLoading(true);
     try {
@@ -205,15 +231,38 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
                       Upgrade to Pro — $8.99/mo
                     </button>
                  )}
-                 {plan === 'pro' && (
+                 {plan === 'pro' && !showCancelConfirm && (
                     <button
-                      onClick={handleManageSubscription}
+                      onClick={() => setShowCancelConfirm(true)}
                       disabled={loading}
-                      className="w-full mt-2 py-2.5 bg-white/60 border border-black/10 text-black/50 rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all hover:bg-white hover:text-black/70 flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full mt-2 py-2.5 bg-white/60 border border-rose-200 text-rose-400 rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-                      Manage / Cancel Subscription
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      Cancel Subscription
                     </button>
+                 )}
+                 {plan === 'pro' && showCancelConfirm && (
+                    <div className="mt-2 bg-rose-50 border border-rose-200 rounded-2xl p-4 animate-in slide-in-from-bottom-2 duration-200">
+                      <p className="text-[10px] font-black text-rose-700 mb-1">⚠️ No Refunds — Are you sure?</p>
+                      <p className="text-[9px] text-rose-600/80 leading-relaxed mb-3">
+                        Your Pro access ends immediately. All subscription fees are <strong>non-refundable</strong> — no exceptions. You will lose access to AI insights, analytics, and multi-account management.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowCancelConfirm(false)}
+                          className="flex-1 py-2.5 bg-white border border-black/10 text-black/50 rounded-xl text-[8px] font-black uppercase tracking-widest hover:text-black transition-all"
+                        >
+                          Keep Pro
+                        </button>
+                        <button
+                          onClick={handleCancelSubscription}
+                          disabled={isCancelling}
+                          className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1"
+                        >
+                          {isCancelling ? <><div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"/>Processing...</> : 'Yes, Cancel'}
+                        </button>
+                      </div>
+                    </div>
                  )}
               </div>
             </div>
@@ -315,6 +364,36 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
             </div>
           )}
 
+          {/* Legal Documents Section */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-1 h-4 bg-black rounded-full"></div>
+              <h3 className="text-[10px] font-black text-black uppercase tracking-[0.2em]">Legal</h3>
+            </div>
+            <div className="space-y-2">
+              {([
+                { id: 'terms' as LegalDoc, label: 'Terms & Conditions', sub: 'Usage, billing, liability & Apple provisions' },
+                { id: 'privacy' as LegalDoc, label: 'Privacy Policy', sub: 'GDPR · CCPA · PIPEDA compliant' },
+              ]).map(({ id, label, sub }) => (
+                <button
+                  key={id}
+                  onClick={() => setOpenLegal(id)}
+                  className="w-full flex items-center gap-4 bg-white/40 hover:bg-white/70 border border-black/5 rounded-2xl p-4 text-left transition-all group"
+                >
+                  <div className="w-8 h-8 bg-black/5 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-black/10 transition-all">
+                    <svg className="w-4 h-4 text-black/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-black text-black">{label}</p>
+                    <p className="text-[9px] text-black/30 font-bold mt-0.5">{sub}</p>
+                  </div>
+                  <svg className="w-4 h-4 text-black/20 group-hover:text-black/50 flex-shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
+              ))}
+            </div>
+            <p className="text-[8px] text-black/20 font-bold uppercase tracking-widest text-center">Governed by Ontario, Canada law · v2025.02</p>
+          </section>
+
           {/* Footer Info */}
           <div className="flex items-center justify-between text-[8px] font-black text-black opacity-20 uppercase tracking-[0.3em] pt-4">
             <span>Identity Protocol SEC-7</span>
@@ -339,6 +418,9 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
           </button>
         </div>
       </div>
+
+      {/* Legal document modals */}
+      {openLegal && <LegalModal doc={openLegal} onClose={() => setOpenLegal(null)} />}
     </div>
   );
 };

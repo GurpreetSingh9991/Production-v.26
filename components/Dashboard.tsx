@@ -23,38 +23,102 @@ interface Alert {
   icon: React.ReactNode;
   title: string;
   message: string;
-  priority: number; // Higher is more urgent
+  priority: number;
 }
 
-// Memoized KPI Box for performance
-const KPIBox = React.memo(({ label, value, subtext, pill, color, tooltip }: any) => (
-  <div 
-    className="apple-glass p-4 sm:p-6 rounded-2xl shadow-sm flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300 overflow-hidden cursor-default"
-    title={tooltip}
-  >
-    <div className="flex items-center justify-between mb-2 sm:mb-4">
-      <h4 className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-black/40 truncate pr-1">{label}</h4>
-      {pill && (
-        <span className={`px-1.5 py-0.5 rounded-full text-[7px] sm:text-[8px] font-black tracking-widest flex-shrink-0 ${
-          pill === 'WIN' || pill === 'GOOD' ? 'bg-emerald-500/10 text-emerald-600' : 
-          pill === 'DD' || pill === 'RISK' ? 'bg-rose-500/10 text-rose-600' : 'bg-black/5 text-black/40'
-        }`}>
-          {pill}
-        </span>
-      )}
+// Loading Skeleton
+const LoadingSkeleton = () => (
+  <div className="space-y-8 animate-pulse">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="h-32 bg-white/40 rounded-2xl" />
+      ))}
     </div>
-    <div className="overflow-hidden">
-       <p className={`text-lg sm:text-2xl font-black tracking-tight truncate ${color === 'rose' ? 'text-rose-600' : color === 'emerald' ? 'text-emerald-600' : color === 'amber' ? 'text-amber-500' : 'text-black'}`}>
-         {value}
-       </p>
-       <p className="text-[8px] sm:text-[10px] font-bold text-black/20 uppercase tracking-widest mt-0.5 truncate">{subtext}</p>
+    <div className="h-64 bg-white/40 rounded-2xl" />
+  </div>
+);
+
+// Empty State
+const EmptyState = () => (
+  <div className="flex flex-col items-center justify-center py-20 px-6 animate-in fade-in zoom-in-95 duration-700">
+    <div className="w-24 h-24 bg-gradient-to-br from-black/5 to-black/10 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
+      <ICONS.LineChart className="w-12 h-12 text-black/20" />
+    </div>
+    <h3 className="text-2xl font-black text-black/80 mb-2 tracking-tight">No Trades Yet</h3>
+    <p className="text-sm text-black/40 mb-8 max-w-md text-center leading-relaxed">
+      Start logging your first trade to unlock real-time analytics, AI insights, and performance tracking
+    </p>
+    <div className="px-6 py-3 bg-black text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg">
+      Log First Trade →
     </div>
   </div>
-));
+);
+
+// Enhanced KPI Box with tiers and trends
+const KPIBox = React.memo(({ label, value, subtext, pill, color, tooltip, tier = 2, trend }: any) => {
+  const getTierStyle = () => {
+    switch (tier) {
+      case 1: return 'p-6 sm:p-8';
+      case 2: return 'p-5 sm:p-6';
+      case 3: return 'p-4 sm:p-5';
+      default: return 'p-5 sm:p-6';
+    }
+  };
+
+  const getValueSize = () => {
+    switch (tier) {
+      case 1: return 'text-3xl sm:text-4xl';
+      case 2: return 'text-xl sm:text-2xl';
+      case 3: return 'text-lg sm:text-xl';
+      default: return 'text-xl sm:text-2xl';
+    }
+  };
+
+  return (
+    <div 
+      className={`apple-glass ${getTierStyle()} rounded-2xl shadow-lg hover:shadow-xl flex flex-col justify-between hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-default animate-in fade-in slide-in-from-bottom-2 border border-white/60`}
+      title={tooltip}
+      style={{ 
+        boxShadow: tier === 1 ? '0 8px 32px rgba(0,0,0,0.12)' : '0 4px 16px rgba(0,0,0,0.08)'
+      }}
+    >
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h4 className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-black/50 truncate pr-1">{label}</h4>
+        {pill && (
+          <span className={`px-2 py-1 rounded-full text-[7px] sm:text-[8px] font-black tracking-widest flex-shrink-0 ${
+            pill === 'WIN' || pill === 'GOOD' ? 'bg-emerald-500/10 text-emerald-600' : 
+            pill === 'DD' || pill === 'RISK' ? 'bg-rose-500/10 text-rose-600' : 'bg-black/5 text-black/40'
+          }`}>
+            {pill}
+          </span>
+        )}
+      </div>
+      <div className="overflow-hidden">
+        <div className="flex items-baseline gap-2">
+          <p className={`${getValueSize()} font-black tracking-tight truncate ${
+            color === 'rose' ? 'text-rose-600' : 
+            color === 'emerald' ? 'text-emerald-600' : 
+            color === 'amber' ? 'text-amber-500' : 
+            'text-black'
+          }`}>
+            {value}
+          </p>
+          {trend && (
+            <span className={`text-sm font-bold ${trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-rose-500' : 'text-black/30'}`}>
+              {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}
+            </span>
+          )}
+        </div>
+        <p className="text-[8px] sm:text-[10px] font-bold text-black/30 uppercase tracking-widest mt-1 truncate">{subtext}</p>
+      </div>
+    </div>
+  );
+});
 
 const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, onTradeEdit, onTradeDelete, displayUnit }) => {
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [dateRange, setDateRange] = useState<DateRange>('ALL');
+  const [isLoading] = useState(false);
 
   const startingEquity = useMemo(() => activeAccount 
     ? activeAccount.initialBalance 
@@ -86,95 +150,115 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     });
   }, [trades, dateRange]);
 
+  const smartAsset = useMemo(() => {
+    if (!filteredByDateTrades.length) return { type: 'STOCKS', label: 'Stocks', qtyLabel: 'Shares', topSymbols: [], pnlLabel: '$', isMixed: false };
+    const counts: Record<string, number> = {};
+    const symbolCounts: Record<string, { count: number; pnl: number }> = {};
+    filteredByDateTrades.forEach(t => {
+      const a = t.assetType || 'STOCKS';
+      counts[a] = (counts[a] || 0) + 1;
+      const sym = (t.symbol || '').toUpperCase();
+      if (sym) {
+        if (!symbolCounts[sym]) symbolCounts[sym] = { count: 0, pnl: 0 };
+        symbolCounts[sym].count += 1;
+        symbolCounts[sym].pnl += t.pnl || 0;
+      }
+    });
+    const topSymbols = Object.entries(symbolCounts)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 3)
+      .map(([sym, data]) => ({ symbol: sym, count: data.count, pnl: data.pnl }));
+
+    const isMixed = Object.keys(counts).length > 1;
+    const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    const type = dominant ? dominant[0] : 'STOCKS';
+    let label = 'Stocks', qtyLabel = 'Shares', pnlLabel = '$';
+    
+    if (type === 'FOREX') { label = 'Forex'; qtyLabel = 'Lots'; pnlLabel = '$'; }
+    else if (type === 'FUTURES') { label = 'Futures'; qtyLabel = 'Contracts'; pnlLabel = '$'; }
+    
+    return { type, label, qtyLabel, topSymbols, pnlLabel, isMixed };
+  }, [filteredByDateTrades]);
+
+  const getUnitLabel = () => {
+    if (displayUnit === 'PERCENT') return '%';
+    if (displayUnit === 'R_MULTIPLE') return 'R';
+    if (displayUnit === 'TICKS') return ' Tks';
+    return '$';
+  };
+
+  const formatValue = (pnl: number, trade?: Trade): number => {
+    if (displayUnit === 'PERCENT') {
+      return startingEquity > 0 ? (pnl / startingEquity) * 100 : 0;
+    } else if (displayUnit === 'R_MULTIPLE') {
+      return trade?.rr || 0;
+    } else if (displayUnit === 'TICKS') {
+      if (!trade) return 0;
+      return (Math.abs(trade.exitPrice - trade.entryPrice)) * (trade.multiplier || 1);
+    }
+    return pnl;
+  };
+
   const stats = useMemo(() => {
     const currentTrades = filteredByDateTrades;
-    if (!currentTrades || currentTrades.length === 0) return null;
-    
-    const sortedTrades = [...currentTrades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const winTrades = currentTrades.filter(t => t.pnl > 0);
-    const lossTrades = currentTrades.filter(t => t.pnl < 0);
-    const winRate = (winTrades.length / currentTrades.length) * 100 || 0;
-    
-    const totalNetPnL = currentTrades.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
+    if (!currentTrades.length) return null;
+
+    const sortedTrades = [...currentTrades].sort((a, b) => new Date(a.date + 'T12:00:00').getTime() - new Date(b.date + 'T12:00:00').getTime());
+    const winTrades = currentTrades.filter(t => t.result === 'WIN');
+    const lossTrades = currentTrades.filter(t => t.result === 'LOSS');
+    const totalNetPnL = currentTrades.reduce((sum, t) => sum + t.pnl, 0);
     const avgPnL = totalNetPnL / currentTrades.length;
-
-    const formatValue = (pnl: number, trade?: Trade) => {
-      switch (displayUnit) {
-        case 'PERCENT': return startingEquity > 0 ? (pnl / startingEquity) * 100 : 0;
-        case 'R_MULTIPLE': return trade ? trade.rr : (pnl / Math.abs(avgPnL || 1));
-        case 'TICKS':
-          if (trade) return (Math.abs(trade.exitPrice - trade.entryPrice)) * (trade.multiplier || 1);
-          return pnl;
-        default: return pnl;
-      }
-    };
-
-    const getUnitLabel = () => {
-      switch (displayUnit) {
-        case 'PERCENT': return '%';
-        case 'R_MULTIPLE': return 'R';
-        case 'TICKS': return ' Tks';
-        default: return '$';
-      }
-    };
-
-    // Advanced Stats Calculations
-    const grossProfit = winTrades.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0);
-    const grossLoss = Math.abs(lossTrades.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0));
-    const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss) : (grossProfit > 0 ? 99.99 : 0);
+    const winRate = currentTrades.length ? (winTrades.length / currentTrades.length) * 100 : 0;
     
-    const avgWin = winTrades.length > 0 ? (grossProfit / winTrades.length) : 0;
-    const avgLoss = lossTrades.length > 0 ? (grossLoss / lossTrades.length) : 0;
-    const expectancyRaw = ((winTrades.length / currentTrades.length) * avgWin) - ((lossTrades.length / currentTrades.length) * avgLoss);
-    const expectancy = formatValue(expectancyRaw);
+    const totalWinPnL = winTrades.reduce((sum, t) => sum + formatValue(t.pnl, t), 0);
+    const totalLossPnL = Math.abs(lossTrades.reduce((sum, t) => sum + formatValue(t.pnl, t), 0));
+    const profitFactor = totalLossPnL > 0 ? totalWinPnL / totalLossPnL : totalWinPnL > 0 ? 999 : 0;
+    
+    const avgWin = winTrades.length ? totalWinPnL / winTrades.length : 0;
+    const avgLoss = lossTrades.length ? totalLossPnL / lossTrades.length : 0;
+    const expectancy = winRate > 0 ? (winRate / 100) * avgWin - ((100 - winRate) / 100) * avgLoss : 0;
 
-    const sortedTradesDesc = [...currentTrades].sort((a, b) => {
-      const timeA = new Date(`${a.date}T${a.entryTime || '00:00'}`).getTime();
-      const timeB = new Date(`${b.date}T${b.entryTime || '00:00'}`).getTime();
-      return timeB - timeA;
+    let peak = displayUnit === 'CURRENCY' ? startingEquity : 0;
+    let maxDrawdown = 0;
+    let cumulative = displayUnit === 'CURRENCY' ? startingEquity : 0;
+
+    sortedTrades.forEach(t => {
+      cumulative += formatValue(t.pnl, t);
+      if (cumulative > peak) peak = cumulative;
+      const dd = peak - cumulative;
+      if (dd > maxDrawdown) maxDrawdown = dd;
     });
 
-    let streakCount = 0;
-    let streakType: 'WIN' | 'LOSS' | 'BE' | 'NONE' = 'NONE';
-    if (sortedTradesDesc.length > 0) {
-      streakType = sortedTradesDesc[0].result;
-      for (const t of sortedTradesDesc) {
-        if (t.result === streakType) streakCount++;
-        else break;
-      }
+    const maxDrawdownPct = peak > 0 ? (maxDrawdown / peak) * 100 : 0;
+
+    let streakCount = 0, streakType: 'WIN' | 'LOSS' | null = null;
+    for (let i = sortedTrades.length - 1; i >= 0; i--) {
+      const t = sortedTrades[i];
+      if (t.result === 'BE') continue;
+      if (!streakType) { streakType = t.result; streakCount = 1; continue; }
+      if (t.result === streakType) { streakCount++; } else { break; }
     }
 
-    // Max Drawdown Logic
-    let peak = startingEquity || 0;
-    let currentEq = startingEquity || 0;
-    let maxDrawdownPct = 0;
-    for (const t of sortedTrades) {
-      currentEq += (Number(t.pnl) || 0);
-      if (currentEq > peak) peak = currentEq;
-      const dd = peak > 0 ? ((peak - currentEq) / peak) * 100 : 0;
-      if (dd > maxDrawdownPct) maxDrawdownPct = dd;
-    }
-
-    // Best Setup Logic
-    const setups: Record<string, { wins: number, total: number }> = {};
+    const setups: Record<string, { total: number; wins: number }> = {};
     currentTrades.forEach(t => {
-      if (!setups[t.setupType]) setups[t.setupType] = { wins: 0, total: 0 };
-      setups[t.setupType].total++;
-      if (t.pnl > 0) setups[t.setupType].wins++;
+      const s = (t.setupType || 'A').toUpperCase();
+      if (!setups[s]) setups[s] = { total: 0, wins: 0 };
+      setups[s].total++;
+      if (t.result === 'WIN') setups[s].wins++;
     });
+
     const bestSetupEntry = Object.entries(setups)
       .map(([name, s]) => ({ name, winRate: (s.wins / s.total) * 100 }))
       .sort((a, b) => b.winRate - a.winRate)[0];
 
-    // Discipline Logic (followedPlan)
     const followedPlanCount = currentTrades.filter(t => t.followedPlan === true).length;
     const disciplineScore = currentTrades.length > 0 ? (followedPlanCount / currentTrades.length) * 100 : 0;
 
-    let cumulative = displayUnit === 'CURRENCY' ? (startingEquity || 0) : 0;
+    let cumulative2 = displayUnit === 'CURRENCY' ? (startingEquity || 0) : 0;
     const equityData = sortedTrades.map((t) => {
       const val = formatValue(t.pnl, t);
-      cumulative += val;
-      return { value: cumulative, date: t.date, pnl: val };
+      cumulative2 += val;
+      return { value: cumulative2, date: t.date, pnl: val };
     });
 
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -185,7 +269,6 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
       return { name: day, pnl: dayPnL };
     });
 
-    // Generate Alerts
     const activeAlerts: Alert[] = [];
     
     if (maxDrawdownPct > 15) {
@@ -250,11 +333,17 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
       winRate, 
       totalNetPnL: formatValue(totalNetPnL), 
       avgPnL: formatValue(avgPnL), 
+      avgWin,
+      avgLoss,
       profitFactor,
       expectancy,
-      equityData, pnlByDay,
-      currentBalance: cumulative,
-      streakCount, streakType,
+      equityData, 
+      pnlByDay,
+      currentBalance: cumulative2,
+      streakCount, 
+      streakType,
+      maxDrawdownPct,
+      disciplineScore,
       unitLabel: getUnitLabel(),
       activeAlerts: activeAlerts.sort((a, b) => b.priority - a.priority).slice(0, 3)
     };
@@ -280,22 +369,24 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     }
 
     return (
-      <div key={trade.id} className="bg-white/40 border border-white/60 rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4 hover:shadow-lg transition-all animate-reagle list-item-optimized">
+      <div key={trade.id} className="bg-white/50 border border-white/80 rounded-2xl p-4 sm:p-5 mb-3 hover:shadow-lg hover:scale-[1.01] transition-all duration-200 animate-in fade-in slide-in-from-bottom-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-black text-[9px] sm:text-[10px] ${trade.side === 'LONG' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-[10px] shadow-inner ${trade.side === 'LONG' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
               {trade.side[0]}
             </div>
             <div>
-              <h4 className="text-xs sm:text-sm font-bold tracking-tight">{trade.symbol}</h4>
-              <p className="text-[9px] sm:text-[10px] font-bold text-black/20 uppercase tracking-widest">{trade.date}</p>
+              <h4 className="text-xs sm:text-sm font-bold tracking-tight text-black">{trade.symbol}</h4>
+              <p className="text-[9px] sm:text-[10px] font-bold text-black/30 uppercase tracking-widest">{trade.date}</p>
             </div>
           </div>
           <div className="flex items-center gap-4 sm:gap-6">
-            <span className={`text-xs sm:text-sm font-black font-mono ${trade.pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <span className={`text-sm sm:text-base font-black font-mono ${trade.pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
               {prefix}{displayPnL.toLocaleString(undefined, { maximumFractionDigits: 2 })}{suffix}
             </span>
-            <button onClick={() => onTradeEdit(trade)} className="text-black/20 hover:text-black transition-colors"><ICONS.Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+            <button onClick={() => onTradeEdit(trade)} className="text-black/20 hover:text-black transition-colors hover:scale-110 active:scale-95">
+              <ICONS.Edit className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
@@ -306,174 +397,269 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     return stats?.activeAlerts.filter(a => !dismissedAlerts.has(a.id)) || [];
   }, [stats?.activeAlerts, dismissedAlerts]);
 
+  if (!trades.length && !isLoading) {
+    return <EmptyState />;
+  }
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  const getPnLTrend = () => {
+    if (!stats) return null;
+    return stats.totalNetPnL > 0 ? 'up' : stats.totalNetPnL < 0 ? 'down' : 'neutral';
+  };
+
+  const getWinRateTrend = () => {
+    if (!stats) return null;
+    return stats.winRate > 50 ? 'up' : stats.winRate < 50 ? 'down' : 'neutral';
+  };
+
   return (
     <div className="space-y-8 sm:space-y-12 pb-12">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-500">
         <div className="flex flex-col">
-          <h2 className="text-xl sm:text-2xl font-black tracking-tighter leading-none">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tighter leading-none text-black">
             {activeAccount?.name || 'Overall Performance'}
           </h2>
+          <p className="text-[10px] font-black text-black/30 uppercase tracking-[0.25em] mt-1">
+            {smartAsset.isMixed ? 'Multi-Asset' : smartAsset.label} · {dateRange === 'ALL' ? 'All Time' : dateRange}
+          </p>
         </div>
-        
-        <div className="flex items-center gap-1 bg-black/5 p-1 rounded-full overflow-x-auto no-scrollbar">
+
+        <div className="flex gap-2 bg-white/40 p-1.5 rounded-xl border border-white/60 shadow-inner">
           {(['ALL', 'TODAY', '7D', '30D', 'MTD', 'YTD'] as DateRange[]).map((range) => (
             <button
               key={range}
               onClick={() => setDateRange(range)}
-              className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
-                dateRange === range ? 'bg-black text-white shadow-md' : 'text-black/40 hover:text-black hover:bg-black/5'
+              className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${
+                dateRange === range
+                  ? 'bg-black text-white shadow-lg'
+                  : 'text-black/40 hover:text-black hover:bg-white/50'
               }`}
             >
-              {range === 'ALL' ? 'All Time' : range === 'TODAY' ? 'Today' : range}
+              {range}
             </button>
           ))}
         </div>
       </div>
 
-      {!stats ? (
-        <div className="apple-glass p-20 rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-4 border border-black/5">
-          <div className="w-16 h-16 bg-black/5 rounded-full flex items-center justify-center text-black/20">
-            <ICONS.Journal className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="text-sm font-black uppercase tracking-widest">No Activity Detected</h3>
-            <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest mt-1">
-              {dateRange === 'ALL' ? 'Start by adding your first trade' : `No trades recorded for ${dateRange === 'TODAY' ? 'today' : 'this period'}`}
-            </p>
-          </div>
+      {visibleAlerts.length > 0 && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-top-3 duration-700">
+          {visibleAlerts.map(alert => (
+            <div
+              key={alert.id}
+              className={`rounded-2xl p-4 sm:p-5 flex items-start gap-4 border-2 shadow-lg transition-all hover:scale-[1.01] ${
+                alert.type === 'danger' ? 'bg-rose-50 border-rose-200' :
+                alert.type === 'warning' ? 'bg-amber-50 border-amber-200' :
+                alert.type === 'success' ? 'bg-emerald-50 border-emerald-200' :
+                'bg-blue-50 border-blue-200'
+              }`}
+            >
+              <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+                alert.type === 'danger' ? 'bg-rose-500 text-white' :
+                alert.type === 'warning' ? 'bg-amber-500 text-white' :
+                alert.type === 'success' ? 'bg-emerald-500 text-white' :
+                'bg-blue-500 text-white'
+              }`}>
+                {alert.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-black tracking-tight text-black mb-1">{alert.title}</h4>
+                <p className="text-xs text-black/60 leading-relaxed">{alert.message}</p>
+              </div>
+              <button
+                onClick={() => setDismissedAlerts(prev => new Set([...prev, alert.id]))}
+                className="flex-shrink-0 text-black/20 hover:text-black transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ))}
         </div>
-      ) : (
-        <>
-          <div className="space-y-6 sm:space-y-8">
-            {/* Row 1: Primary Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <KPIBox label={displayUnit === 'CURRENCY' ? "Balance" : "Return"} value={`${displayUnit === 'CURRENCY' ? '$' : ''}${stats.currentBalance.toLocaleString(undefined, { maximumFractionDigits: 1 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} subtext="Current liquidity" color="black" />
-              <KPIBox label="Win Rate" value={`${stats.winRate.toFixed(0)}%`} subtext={`${stats.wins} wins recorded`} color="black" />
-              <KPIBox label="Avg Reward" value={`${displayUnit === 'CURRENCY' ? '$' : ''}${stats.avgPnL.toLocaleString(undefined, { maximumFractionDigits: 1 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} subtext="Expected value" color={stats.totalNetPnL >= 0 ? 'emerald' : 'rose'} />
-              <KPIBox 
-                label="Streak" 
-                value={`${stats.streakCount}`} 
-                pill={stats.streakType === 'WIN' ? 'WIN' : stats.streakType === 'LOSS' ? 'DD' : 'STABLE'}
-                subtext={stats.streakType === 'WIN' ? 'Succession' : stats.streakType === 'LOSS' ? 'Drawdown' : 'Stable'} 
-                color={stats.streakType === 'WIN' ? 'emerald' : stats.streakType === 'LOSS' ? 'rose' : 'black'} 
-              />
-            </div>
-
-            {/* Row 2: Secondary / Advanced Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              <KPIBox 
-                label="Profit Factor" 
-                value={stats.profitFactor.toFixed(2)} 
-                subtext="Gross Profit / Gross Loss" 
-                pill={stats.profitFactor > 1.5 ? 'GOOD' : stats.profitFactor < 1.0 ? 'RISK' : 'NEUTRAL'}
-                color={stats.profitFactor > 1.5 ? 'emerald' : stats.profitFactor >= 1.0 ? 'amber' : 'rose'} 
-                tooltip={`You make $${stats.profitFactor.toFixed(2)} for every $1 you lose`}
-              />
-              <KPIBox 
-                label="Expectancy" 
-                value={`${stats.expectancy >= 0 ? '+' : ''}${displayUnit === 'CURRENCY' ? '$' : ''}${stats.expectancy.toLocaleString(undefined, { maximumFractionDigits: 2 })}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} 
-                subtext="Expected per trade" 
-                color={stats.expectancy >= 0 ? 'emerald' : 'rose'} 
-                tooltip="The average profit or loss you can expect to make per trade over time."
-              />
-              <KPIBox 
-                label="Total Trades" 
-                value={stats.total.toString()} 
-                subtext={`${stats.wins} wins | ${stats.losses} losses`} 
-                color="black" 
-                tooltip={`Cumulative execution volume across the current scope.`}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 apple-glass p-6 sm:p-8 rounded-[2rem] ambient-shadow relative overflow-hidden">
-              <h3 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-6 sm:mb-8">Equity Progress ({displayUnit})</h3>
-              <div className="h-[200px] sm:h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={stats.equityData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#000" opacity={0.05} />
-                    <XAxis dataKey="date" hide />
-                    <YAxis hide domain={['auto', 'auto']} />
-                    <Tooltip 
-                      cursor={false} 
-                      contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', fontSize: '12px' }}
-                      formatter={(value: any) => `${displayUnit === 'CURRENCY' ? '$' : ''}${value.toLocaleString()}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`}
-                    />
-                    <Area isAnimationActive={false} type="monotone" dataKey="value" stroke="black" strokeWidth={2.5} fill="transparent" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="apple-glass p-6 sm:p-8 rounded-[2rem] ambient-shadow">
-              <h3 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-black/40 mb-6 sm:mb-8">Weekday Bias ({displayUnit})</h3>
-              <div className="h-[200px] sm:h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.pnlByDay}>
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 800 }} />
-                    <Tooltip cursor={false} contentStyle={{ fontSize: '12px' }} formatter={(v:any) => `${displayUnit === 'CURRENCY' ? '$' : ''}${v.toLocaleString()}${displayUnit !== 'CURRENCY' ? stats.unitLabel : ''}`} />
-                    <Bar dataKey="pnl" isAnimationActive={false}>
-                      {stats.pnlByDay.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#10b981' : '#f43f5e'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* Alerts & Insights Panel */}
-          {visibleAlerts.length > 0 && (
-            <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="px-2">
-                <h3 className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em] flex items-center gap-2">
-                  <div className="w-1 h-3 bg-black/20 rounded-full" /> Operational Insights
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {visibleAlerts.map((alert) => (
-                  <div 
-                    key={alert.id}
-                    className={`apple-glass p-6 rounded-2xl border-l-4 relative group transition-all duration-300 hover:scale-[1.01] ${
-                      alert.type === 'danger' ? 'border-l-rose-500 bg-rose-500/[0.02]' : 
-                      alert.type === 'warning' ? 'border-l-amber-500 bg-amber-500/[0.02]' : 
-                      alert.type === 'success' ? 'border-l-emerald-500 bg-emerald-500/[0.02]' : 
-                      'border-l-violet-500 bg-violet-500/[0.02]'
-                    }`}
-                  >
-                    <button 
-                      onClick={() => setDismissedAlerts(prev => new Set(prev).add(alert.id))}
-                      className="absolute top-4 right-4 text-black/10 hover:text-black transition-colors"
-                    >
-                      <ICONS.Close className="w-3.5 h-3.5" />
-                    </button>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`p-2 rounded-xl shrink-0 ${
-                        alert.type === 'danger' ? 'bg-rose-500/10 text-rose-600' : 
-                        alert.type === 'warning' ? 'bg-amber-500/10 text-amber-600' : 
-                        alert.type === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 
-                        'bg-violet-500/10 text-violet-600'
-                      }`}>
-                        {alert.icon}
-                      </div>
-                      <h4 className="text-[11px] font-black uppercase tracking-widest">{alert.title}</h4>
-                    </div>
-                    <p className="text-[11px] font-semibold text-black/60 leading-relaxed italic pr-4">
-                      "{alert.message}"
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-        </>
       )}
 
-      <section className="pt-4">
-         <TradeCalendar trades={trades} renderTradeDetail={renderTradeDetail} onTradeEdit={onTradeEdit} onTradeDelete={onTradeDelete} />
-      </section>
+      {stats && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <KPIBox
+              tier={1}
+              label="Net P&L"
+              value={`${stats.totalNetPnL >= 0 ? '+' : ''}${stats.totalNetPnL.toLocaleString(undefined, { maximumFractionDigits: 2 })}${stats.unitLabel}`}
+              subtext={stats.totalNetPnL >= 0 ? 'Profitable Period' : 'Drawdown Period'}
+              color={stats.totalNetPnL >= 0 ? 'emerald' : 'rose'}
+              trend={getPnLTrend()}
+              tooltip="Total realized profit/loss"
+            />
+            <KPIBox
+              tier={1}
+              label="Win Rate"
+              value={`${stats.winRate.toFixed(1)}%`}
+              subtext={`${stats.wins} Wins · ${stats.losses} Losses`}
+              color={stats.winRate >= 50 ? 'emerald' : stats.winRate >= 40 ? 'amber' : 'rose'}
+              trend={getWinRateTrend()}
+              pill={stats.winRate >= 50 ? 'GOOD' : 'RISK'}
+              tooltip="Percentage of winning trades"
+            />
+            <KPIBox
+              tier={1}
+              label="Profit Factor"
+              value={stats.profitFactor.toFixed(2)}
+              subtext={stats.profitFactor >= 2 ? 'Exceptional Edge' : stats.profitFactor >= 1.5 ? 'Solid Edge' : 'Needs Work'}
+              color={stats.profitFactor >= 2 ? 'emerald' : stats.profitFactor >= 1.5 ? 'amber' : 'rose'}
+              trend={stats.profitFactor >= 1.5 ? 'up' : 'down'}
+              tooltip="Gross profit / Gross loss"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <KPIBox
+              tier={2}
+              label="Avg Win"
+              value={`${stats.avgWin >= 0 ? '+' : ''}${stats.avgWin.toLocaleString(undefined, { maximumFractionDigits: 2 })}${stats.unitLabel}`}
+              subtext="Per Winning Trade"
+              color="emerald"
+              tooltip="Average profit per winning trade"
+            />
+            <KPIBox
+              tier={2}
+              label="Avg Loss"
+              value={`-${stats.avgLoss.toLocaleString(undefined, { maximumFractionDigits: 2 })}${stats.unitLabel}`}
+              subtext="Per Losing Trade"
+              color="rose"
+              tooltip="Average loss per losing trade"
+            />
+            <KPIBox
+              tier={2}
+              label="Expectancy"
+              value={`${stats.expectancy >= 0 ? '+' : ''}${stats.expectancy.toLocaleString(undefined, { maximumFractionDigits: 2 })}${stats.unitLabel}`}
+              subtext={stats.expectancy > 0 ? 'Positive Edge' : 'Negative Edge'}
+              color={stats.expectancy > 0 ? 'emerald' : 'rose'}
+              tooltip="Expected value per trade"
+            />
+            <KPIBox
+              tier={2}
+              label="Total Trades"
+              value={stats.total}
+              subtext={`${smartAsset.label} Executed`}
+              tooltip="Number of trades executed"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <KPIBox
+              tier={3}
+              label="Max Drawdown"
+              value={`${stats.maxDrawdownPct.toFixed(1)}%`}
+              subtext="Peak to Trough"
+              color={stats.maxDrawdownPct > 15 ? 'rose' : stats.maxDrawdownPct > 10 ? 'amber' : 'emerald'}
+              pill={stats.maxDrawdownPct > 15 ? 'DD' : undefined}
+              tooltip="Maximum decline from peak"
+            />
+            <KPIBox
+              tier={3}
+              label="Discipline"
+              value={`${stats.disciplineScore.toFixed(0)}%`}
+              subtext="Plan Adherence"
+              color={stats.disciplineScore >= 70 ? 'emerald' : 'amber'}
+              tooltip="Percentage following trading plan"
+            />
+            <KPIBox
+              tier={3}
+              label="Current Streak"
+              value={`${stats.streakCount}`}
+              subtext={stats.streakType === 'WIN' ? 'Win Streak' : stats.streakType === 'LOSS' ? 'Loss Streak' : 'No Streak'}
+              color={stats.streakType === 'WIN' ? 'emerald' : stats.streakType === 'LOSS' ? 'rose' : undefined}
+              tooltip="Current consecutive wins/losses"
+            />
+            <KPIBox
+              tier={3}
+              label="Current Balance"
+              value={`${stats.currentBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}${stats.unitLabel}`}
+              subtext="Live Equity"
+              tooltip="Account balance with trades applied"
+            />
+            <KPIBox
+              tier={3}
+              label="Avg P&L"
+              value={`${stats.avgPnL >= 0 ? '+' : ''}${stats.avgPnL.toLocaleString(undefined, { maximumFractionDigits: 2 })}${stats.unitLabel}`}
+              subtext="Per Trade"
+              color={stats.avgPnL >= 0 ? 'emerald' : 'rose'}
+              tooltip="Average profit/loss per trade"
+            />
+          </div>
+
+          <div className="apple-glass rounded-2xl p-6 shadow-lg border border-white/60 animate-in fade-in slide-in-from-bottom-3 duration-700">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-black/50 mb-6">Equity Curve</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={stats.equityData}>
+                <defs>
+                  <linearGradient id="colorPnL" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={stats.totalNetPnL >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={stats.totalNetPnL >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#000" opacity={0.05} />
+                <XAxis dataKey="date" stroke="#000" opacity={0.2} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                <YAxis stroke="#000" opacity={0.2} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    padding: '8px 12px'
+                  }}
+                />
+                <Area type="monotone" dataKey="value" stroke={stats.totalNetPnL >= 0 ? "#10b981" : "#ef4444"} strokeWidth={3} fill="url(#colorPnL)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="apple-glass rounded-2xl p-6 shadow-lg border border-white/60 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-black/50 mb-6">Performance by Day</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={stats.pnlByDay}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#000" opacity={0.05} />
+                <XAxis dataKey="name" stroke="#000" opacity={0.2} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                <YAxis stroke="#000" opacity={0.2} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    padding: '8px 12px'
+                  }}
+                />
+                <Bar dataKey="pnl" radius={[8, 8, 0, 0]}>
+                  {stats.pnlByDay.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#10b981' : '#ef4444'} opacity={0.9} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="animate-in fade-in slide-in-from-bottom-5 duration-700">
+            <TradeCalendar trades={filteredByDateTrades} />
+          </div>
+
+          <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-black/50">Recent Trades</h3>
+              <span className="text-[9px] font-black text-black/30 uppercase tracking-widest">{filteredByDateTrades.length} Total</span>
+            </div>
+            <div className="space-y-3">
+              {[...filteredByDateTrades].reverse().slice(0, 10).map(renderTradeDetail)}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

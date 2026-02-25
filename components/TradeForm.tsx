@@ -42,6 +42,10 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
   const [showPsychology, setShowPsychology] = useState(false);
   const [isAdvanced, setIsAdvanced] = useState(false);
   
+  // Pip/Tick value for Forex/CFD/Futures
+  const [pipValue, setPipValue] = useState(10); // $ per pip per lot (default: EURUSD standard lot)
+  const [pipSize, setPipSize] = useState(0.0001); // 1 pip = 0.0001 for most forex pairs
+  
   const defaultPsychology: Psychology = {
     moodBefore: 3,
     moodAfter: 3,
@@ -145,7 +149,24 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
     
     if (entry !== 0 && exit !== 0) {
       let diff = formData.side === 'LONG' ? (exit - entry) : (entry - exit);
-      let calculatedGross = diff * qty * mult;
+      let calculatedGross: number;
+      let calculatedPips: number | undefined;
+
+      if (formData.assetType === 'FOREX') {
+        // Forex: PnL = (price_diff / pip_size) × pip_value × lots
+        const pips = diff / pipSize;
+        calculatedPips = parseFloat(pips.toFixed(1));
+        calculatedGross = pips * pipValue * qty;
+      } else if (formData.assetType === 'FUTURES') {
+        // Futures: PnL = (price_diff / tick_size) × tick_value × contracts
+        const ticks = diff / pipSize;
+        calculatedPips = parseFloat(ticks.toFixed(0));
+        calculatedGross = ticks * pipValue * qty;
+      } else {
+        // Stocks: PnL = price_diff × qty × multiplier
+        calculatedGross = diff * qty * mult;
+      }
+
       let calculatedNet = calculatedGross - fees;
       
       setFormData(prev => ({
@@ -153,7 +174,8 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
         gross_pnl: Number(calculatedGross.toFixed(2)),
         pnl: Number(calculatedNet.toFixed(2)),
         net_pnl: Number(calculatedNet.toFixed(2)),
-        result: calculatedNet > 0.01 ? 'WIN' : (calculatedNet < -0.01 ? 'LOSS' : 'BE')
+        result: calculatedNet > 0.01 ? 'WIN' : (calculatedNet < -0.01 ? 'LOSS' : 'BE'),
+        ...(calculatedPips !== undefined ? { pips: calculatedPips } : {})
       }));
     }
 
@@ -165,10 +187,129 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
         setFormData(prev => ({ ...prev, rr: Number(calculatedRR.toFixed(2)) }));
       }
     }
-  }, [formData.executions, isAdvanced, formData.entryPrice, formData.exitPrice, formData.stopLossPrice, formData.targetPrice, formData.qty, formData.side, formData.multiplier, formData.total_fees]);
+  }, [formData.executions, isAdvanced, formData.entryPrice, formData.exitPrice, formData.stopLossPrice, formData.targetPrice, formData.qty, formData.side, formData.multiplier, formData.total_fees, formData.assetType, pipValue, pipSize]);
+
+  // ── Smart Asset / Pip / Tick detector ──────────────────────────────────
+  const TICK_MAP: Record<string, { tick: number; value: number; label: string }> = {
+    // Equity Index Futures
+    ES:  { tick: 0.25,     value: 12.50,  label: 'S&P 500 E-mini' },
+    MES: { tick: 0.25,     value: 1.25,   label: 'S&P 500 Micro' },
+    NQ:  { tick: 0.25,     value: 5.00,   label: 'Nasdaq E-mini' },
+    MNQ: { tick: 0.25,     value: 0.50,   label: 'Nasdaq Micro' },
+    YM:  { tick: 1,        value: 5.00,   label: 'Dow Jones E-mini' },
+    MYM: { tick: 1,        value: 0.50,   label: 'Dow Jones Micro' },
+    RTY: { tick: 0.10,     value: 5.00,   label: 'Russell 2000' },
+    M2K: { tick: 0.10,     value: 0.50,   label: 'Russell 2000 Micro' },
+    // Energy
+    CL:  { tick: 0.01,     value: 10.00,  label: 'Crude Oil' },
+    MCL: { tick: 0.01,     value: 1.00,   label: 'Micro Crude Oil' },
+    NG:  { tick: 0.001,    value: 10.00,  label: 'Natural Gas' },
+    RB:  { tick: 0.0001,   value: 4.20,   label: 'RBOB Gasoline' },
+    // Metals
+    GC:  { tick: 0.10,     value: 10.00,  label: 'Gold' },
+    MGC: { tick: 0.10,     value: 1.00,   label: 'Micro Gold' },
+    SI:  { tick: 0.005,    value: 25.00,  label: 'Silver' },
+    HG:  { tick: 0.0005,   value: 12.50,  label: 'Copper' },
+    PL:  { tick: 0.10,     value: 5.00,   label: 'Platinum' },
+    PA:  { tick: 0.05,     value: 5.00,   label: 'Palladium' },
+    // Agriculture
+    ZC:  { tick: 0.25,     value: 12.50,  label: 'Corn' },
+    ZW:  { tick: 0.25,     value: 12.50,  label: 'Wheat' },
+    ZS:  { tick: 0.25,     value: 12.50,  label: 'Soybeans' },
+    ZL:  { tick: 0.0001,   value: 0.60,   label: 'Soybean Oil' },
+    ZM:  { tick: 0.10,     value: 1.00,   label: 'Soybean Meal' },
+    LE:  { tick: 0.00025,  value: 10.00,  label: 'Live Cattle' },
+    HE:  { tick: 0.00025,  value: 10.00,  label: 'Lean Hogs' },
+    // Treasury Bonds
+    ZB:  { tick: 0.03125,  value: 31.25,  label: '30Y T-Bond' },
+    ZN:  { tick: 0.015625, value: 15.625, label: '10Y T-Note' },
+    ZF:  { tick: 0.0078125,value: 7.8125, label: '5Y T-Note' },
+    ZT:  { tick: 0.0039063,value: 3.9063, label: '2Y T-Note' },
+    // Forex Futures
+    '6E': { tick: 0.00005, value: 6.25,   label: 'EUR/USD Futures' },
+    '6B': { tick: 0.0001,  value: 6.25,   label: 'GBP/USD Futures' },
+    '6J': { tick: 0.0000005,value: 6.25,  label: 'USD/JPY Futures' },
+    '6C': { tick: 0.00005, value: 5.00,   label: 'CAD/USD Futures' },
+    '6A': { tick: 0.0001,  value: 10.00,  label: 'AUD/USD Futures' },
+    // Crypto
+    BTC: { tick: 5.00,     value: 25.00,  label: 'Bitcoin Futures' },
+    ETH: { tick: 0.25,     value: 12.50,  label: 'Ether Futures' },
+    MBT: { tick: 5.00,     value: 2.50,   label: 'Micro Bitcoin' },
+  };
+
+  const FOREX_CURRENCIES = ['USD','EUR','GBP','AUD','NZD','CAD','CHF','JPY','SGD','HKD','NOK','SEK','DKK','MXN','ZAR','TRY','CNH','PLN','CZK','HUF'];
+
+  const detectAssetFromSymbol = (sym: string): {
+    assetType: 'STOCKS' | 'FOREX' | 'FUTURES';
+    pipSize?: number;
+    pipValueHint?: number;
+    label?: string;
+  } => {
+    const s = sym.toUpperCase().trim();
+    if (!s) return { assetType: 'STOCKS' };
+
+    // ── Forex: any 6-char pair like EURUSD, GBPJPY, USDJPY, XAUUSD etc.
+    if (s.length === 6) {
+      const base = s.slice(0, 3);
+      const quote = s.slice(3, 6);
+      const metals = ['XAU','XAG','XPT','XPD'];
+      if (
+        (FOREX_CURRENCIES.includes(base) && FOREX_CURRENCIES.includes(quote)) ||
+        (metals.includes(base) && FOREX_CURRENCIES.includes(quote))
+      ) {
+        const isJPY = quote === 'JPY' || base === 'JPY';
+        const isXAU = metals.includes(base);
+        return {
+          assetType: 'FOREX',
+          pipSize: isJPY ? 0.01 : isXAU ? 0.01 : 0.0001,
+          pipValueHint: 10,
+          label: `${base}/${quote}`,
+        };
+      }
+    }
+
+    // ── Futures: strip expiry codes (e.g. ESH25 → ES, CLM24 → CL)
+    // Strip trailing month code (letter) + year digits
+    const stripped = s.replace(/([A-Z]{1,2})([FGHJKMNQUVXZ]\d{2})$/, '$1').replace(/\d+$/, '');
+    if (TICK_MAP[stripped]) {
+      const t = TICK_MAP[stripped];
+      return { assetType: 'FUTURES', pipSize: t.tick, pipValueHint: t.value, label: t.label };
+    }
+    // Also try the raw symbol (for 2-letter codes like ES, NQ typed without expiry)
+    if (TICK_MAP[s]) {
+      const t = TICK_MAP[s];
+      return { assetType: 'FUTURES', pipSize: t.tick, pipValueHint: t.value, label: t.label };
+    }
+
+    return { assetType: 'STOCKS' };
+  };
+
+  // Sync pip/tick values when assetType or symbol changes on existing trade load
+  useEffect(() => {
+    if (initialData?.symbol) {
+      const detected = detectAssetFromSymbol(initialData.symbol);
+      if (detected.pipSize) setPipSize(detected.pipSize);
+      if (detected.pipValueHint) setPipValue(detected.pipValueHint);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData?.symbol]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+
+    // For symbol changes: detect asset type and update everything in ONE setFormData call
+    if (name === 'symbol' && value.length >= 2) {
+      const detected = detectAssetFromSymbol(value);
+      if (detected.pipSize) setPipSize(detected.pipSize);
+      if (detected.pipValueHint) setPipValue(detected.pipValueHint);
+      setFormData(prev => ({
+        ...prev,
+        symbol: value.toUpperCase(),
+        assetType: detected.assetType,
+      }));
+      return; // don't fall through to generic handler
+    }
+
     setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) : value }));
   };
 
@@ -389,6 +530,27 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
                   <div className="space-y-1.5">
                     <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Symbol</label>
                     <input type="text" name="symbol" value={formData.symbol} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black outline-none uppercase h-[48px] text-black" placeholder="BTCUSD" required />
+                    {/* Smart asset type badge */}
+                    {formData.symbol && formData.symbol.length >= 2 && (
+                      <div className={`mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest w-fit animate-in fade-in duration-300 ${
+                        formData.assetType === 'FOREX'   ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                        formData.assetType === 'FUTURES' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                        'bg-black/5 text-black/40 border border-black/5'
+                      }`}>
+                        {formData.assetType === 'FOREX' ? '💱 Forex · Pip Mode' : formData.assetType === 'FUTURES' ? '📈 Futures · Tick Mode' : '📊 Stocks · Share Mode'}
+                      </div>
+                    )}
+                    {/* Smart asset type badge */}
+                    {formData.symbol && formData.symbol.length >= 2 && (
+                      <div className={`mt-1 flex items-center gap-1.5 px-2 py-1 rounded-lg text-[7px] font-black uppercase tracking-widest w-fit transition-all animate-in fade-in duration-300 ${
+                        formData.assetType === 'FOREX'   ? 'bg-blue-50 text-blue-600' :
+                        formData.assetType === 'FUTURES' ? 'bg-amber-50 text-amber-700' :
+                        'bg-black/5 text-black/40'
+                      }`}>
+                        <span>{formData.assetType === 'FOREX' ? '💱' : formData.assetType === 'FUTURES' ? '📈' : '📊'}</span>
+                        {formData.assetType === 'FOREX' ? 'Forex' : formData.assetType === 'FUTURES' ? 'Futures' : 'Stocks'} detected
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Side</label>
@@ -418,6 +580,16 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
                 <div className="space-y-1.5">
                   <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Symbol</label>
                   <input type="text" name="symbol" value={formData.symbol} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black outline-none uppercase h-[48px] text-black" placeholder="BTCUSD" required />
+                    {/* Smart asset type badge */}
+                    {formData.symbol && formData.symbol.length >= 2 && (
+                      <div className={`mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest w-fit animate-in fade-in duration-300 ${
+                        formData.assetType === 'FOREX'   ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                        formData.assetType === 'FUTURES' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                        'bg-black/5 text-black/40 border border-black/5'
+                      }`}>
+                        {formData.assetType === 'FOREX' ? '💱 Forex · Pip Mode' : formData.assetType === 'FUTURES' ? '📈 Futures · Tick Mode' : '📊 Stocks · Share Mode'}
+                      </div>
+                    )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Side</label>
@@ -428,7 +600,9 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Qty</label>
+                  <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">
+                    {formData.assetType === 'FOREX' ? 'Lots' : formData.assetType === 'FUTURES' ? 'Contracts' : 'Shares'}
+                  </label>
                   <input type="number" name="qty" value={formData.qty} onChange={handleChange} step="any" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black outline-none h-[48px] text-black" required />
                 </div>
                 <div className="space-y-1.5">
@@ -616,10 +790,62 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div className="space-y-1.5">
-                <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Asset Multiplier</label>
-                <input type="number" name="multiplier" value={formData.multiplier} onChange={handleChange} step="any" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black outline-none h-[48px] text-black" />
-              </div>
+              {(formData.assetType === 'FOREX' || formData.assetType === 'FUTURES') ? (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">
+                      {formData.assetType === 'FOREX' ? 'Pip Value ($)' : 'Tick Value ($)'}
+                      <span className="text-black/30 normal-case ml-1">per {formData.assetType === 'FOREX' ? 'pip' : 'tick'} per lot</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={pipValue}
+                      onChange={e => setPipValue(parseFloat(e.target.value) || 10)}
+                      step="any"
+                      min="0"
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black outline-none h-[48px] text-black"
+                      placeholder={formData.assetType === 'FOREX' ? '10' : '12.50'}
+                    />
+                    <p className="text-[8px] text-black/30 ml-1">
+                      {formData.assetType === 'FOREX' 
+                        ? 'Standard: $10/pip (1 lot EURUSD). Mini lot = $1/pip' 
+                        : 'e.g. ES Futures = $12.50/tick, NQ = $5/tick'}
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">
+                      {formData.assetType === 'FOREX' ? 'Pip Size' : 'Tick Size'}
+                    </label>
+                    <input
+                      type="number"
+                      value={pipSize}
+                      onChange={e => setPipSize(parseFloat(e.target.value) || 0.0001)}
+                      step="any"
+                      min="0.00001"
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black outline-none h-[48px] text-black"
+                      placeholder={formData.assetType === 'FOREX' ? '0.0001' : '0.25'}
+                    />
+                    <p className="text-[8px] text-black/30 ml-1">
+                      {formData.assetType === 'FOREX'
+                        ? 'Most pairs: 0.0001 | JPY pairs: 0.01'
+                        : 'ES/NQ: 0.25 | Crude Oil: 0.01'}
+                    </p>
+                  </div>
+                  {formData.pips !== undefined && formData.pips !== 0 && (
+                    <div className="sm:col-span-2 bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
+                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                        {formData.assetType === 'FOREX' ? '📊 Pips' : '📊 Ticks'}: {formData.pips}
+                      </span>
+                      <span className="text-[10px] text-emerald-600 ml-auto">Auto-calculated from entry/exit</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Asset Multiplier</label>
+                  <input type="number" name="multiplier" value={formData.multiplier} onChange={handleChange} step="any" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black outline-none h-[48px] text-black" />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Snapshot URL</label>
                 <input type="url" name="chartLink" value={formData.chartLink} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-mono outline-none h-[48px] text-black" placeholder="TradingView Link" />

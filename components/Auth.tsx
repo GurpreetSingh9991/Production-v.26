@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { ICONS } from '../constants';
 import { signIn, signUp, signInWithGoogle, getSupabaseClient } from '../services/supabase';
+import { LegalModal } from './Legal';
+
+type LegalDoc = 'privacy' | 'terms';
 
 interface AuthProps {
   onAuthSuccess: () => void;
@@ -14,6 +17,8 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [openLegal, setOpenLegal] = useState<LegalDoc | null>(null);
 
   const client = getSupabaseClient();
 
@@ -46,6 +51,11 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         if (authError) throw authError;
         onAuthSuccess();
       } else {
+        if (!termsAccepted) {
+          setError('You must accept the Terms & Conditions and Privacy Policy to register.');
+          setIsLoading(false);
+          return;
+        }
         const { error: authError, data } = await signUp(email, password, name || "Trader", "");
         if (authError) throw authError;
         
@@ -184,6 +194,32 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
             </div>
           )}
 
+          {/* T&C checkbox for signup */}
+          {!isLogin && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div
+                  className={`w-4 h-4 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                    termsAccepted ? 'bg-black border-black' : 'border-black/25 bg-white/40 group-hover:border-black/50'
+                  }`}
+                  onClick={() => setTermsAccepted(!termsAccepted)}
+                >
+                  {termsAccepted && (
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-[10px] text-black/50 leading-relaxed font-medium" onClick={() => setTermsAccepted(!termsAccepted)}>
+                  I agree to the{' '}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setOpenLegal('terms'); }} className="text-black font-black underline decoration-black/30">Terms & Conditions</button>
+                  {' '}and{' '}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setOpenLegal('privacy'); }} className="text-black font-black underline decoration-black/30">Privacy Policy</button>
+                </span>
+              </label>
+            </div>
+          )}
+
           <div className="pt-4 flex justify-center">
             <button 
               type="submit" 
@@ -222,11 +258,20 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         </div>
 
         <div className="mt-10 pt-6 border-t border-black/5 text-center">
-          <p className="text-[8px] text-black/20 font-black uppercase tracking-[0.2em] leading-relaxed max-w-xs mx-auto">
-            TradeFlow Lab is restricted for professional execution. By logging in you agree to our <span className="text-black/40 underline cursor-pointer">protocol terms</span>.
+          <p className="text-[8px] text-black/30 font-semibold leading-relaxed max-w-xs mx-auto">
+            ⚠️ Trading is risky and 99.9% of people lose money. This is not financial advice — do not risk money you cannot afford to lose. TradeFlow Studio is not responsible for any trading losses.
+          </p>
+          <p className="text-[7px] text-black/15 font-bold mt-2 uppercase tracking-widest">
+            By continuing you agree to our{' '}
+            <button onClick={() => setOpenLegal('terms')} className="text-black/30 underline cursor-pointer hover:text-black/50 transition-colors">Terms</button>
+            {' '}&amp;{' '}
+            <button onClick={() => setOpenLegal('privacy')} className="text-black/30 underline cursor-pointer hover:text-black/50 transition-colors">Privacy Policy</button>
           </p>
         </div>
       </div>
+
+      {/* Legal document modals */}
+      {openLegal && <LegalModal doc={openLegal} onClose={() => setOpenLegal(null)} />}
     </div>
   );
 };

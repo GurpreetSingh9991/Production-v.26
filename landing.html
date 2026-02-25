@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TradeFlow Studio — The Trading Journal Built for Serious Traders</title>
+<meta name="description" content="Log, analyse, and sharpen your edge. AI-powered weekly debriefs. Psychology tracking. Built for serious traders."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f4f0;
+    --gray: #D6D6D6;
+    --mid: #888;
+    --accent: #e8ff47;
+    --red: #ff4444;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE ─────────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 1000; opacity: 0.4;
+  }
+
+  /* ── NAV ───────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 40px;
+    background: rgba(10,10,10,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none;
+  }
+  .nav-logo-icon {
+    width: 36px; height: 36px; background: var(--white);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--black);
+    letter-spacing: -0.5px;
+  }
+  .nav-logo-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px; color: var(--white);
+  }
+  .nav-cta {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .nav-login {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: rgba(255,255,255,0.5);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .nav-login:hover { color: var(--white); }
+  .btn-primary {
+    background: var(--white); color: var(--black);
+    padding: 10px 22px; border-radius: 100px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.15em;
+    text-transform: uppercase; text-decoration: none;
+    transition: all 0.2s; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary:hover { background: var(--accent); transform: scale(1.03); }
+  .btn-accent {
+    background: var(--accent); color: var(--black);
+    padding: 16px 36px; border-radius: 100px;
+    font-size: 12px; font-weight: 800; letter-spacing: 0.15em;
+    text-transform: uppercase; text-decoration: none;
+    transition: all 0.25s; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-accent:hover { transform: scale(1.04); box-shadow: 0 0 40px rgba(232,255,71,0.3); }
+
+  /* ── HERO ──────────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 120px 40px 80px;
+    position: relative; text-align: center;
+    overflow: hidden;
+  }
+  .hero-grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-glow {
+    position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+    width: 700px; height: 400px;
+    background: radial-gradient(ellipse, rgba(232,255,71,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 24px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .hero-label::before, .hero-label::after {
+    content: ''; display: inline-block;
+    width: 24px; height: 1px; background: var(--accent); opacity: 0.5;
+  }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 12vw, 160px);
+    line-height: 0.9; letter-spacing: -1px;
+    color: var(--white);
+    margin-bottom: 32px;
+    position: relative;
+  }
+  h1 span { color: var(--accent); }
+  .hero-sub {
+    font-size: 17px; font-weight: 400; color: rgba(255,255,255,0.5);
+    max-width: 480px; margin: 0 auto 48px; line-height: 1.7;
+  }
+  .hero-actions {
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 60px;
+  }
+  .hero-note {
+    font-size: 10px; color: rgba(255,255,255,0.25);
+    font-family: 'DM Mono', monospace; letter-spacing: 0.1em;
+  }
+  .hero-stats {
+    display: flex; gap: 48px; margin-top: 64px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px; color: var(--white); letter-spacing: 1px;
+    display: block;
+  }
+  .hero-stat-label {
+    font-size: 10px; color: rgba(255,255,255,0.3);
+    letter-spacing: 0.2em; text-transform: uppercase;
+  }
+
+  /* ── RISK BANNER ───────────────────────────────────────────── */
+  .risk-banner {
+    background: rgba(255,68,68,0.07);
+    border-top: 1px solid rgba(255,68,68,0.2);
+    border-bottom: 1px solid rgba(255,68,68,0.2);
+    padding: 16px 40px;
+    text-align: center;
+  }
+  .risk-banner p {
+    font-size: 11px; color: rgba(255,100,100,0.85);
+    font-weight: 600; letter-spacing: 0.05em; line-height: 1.6;
+    max-width: 900px; margin: 0 auto;
+  }
+  .risk-banner strong { color: var(--red); }
+
+  /* ── SECTIONS ──────────────────────────────────────────────── */
+  section { padding: 100px 40px; max-width: 1100px; margin: 0 auto; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3); margin-bottom: 16px;
+  }
+  h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 6vw, 80px);
+    line-height: 0.95; letter-spacing: -0.5px;
+    margin-bottom: 24px; color: var(--white);
+  }
+  h2 span { color: var(--accent); }
+
+  /* ── FEATURES ──────────────────────────────────────────────── */
+  .features-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2px; margin-top: 60px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .feature-card {
+    padding: 36px; background: rgba(255,255,255,0.02);
+    transition: background 0.2s;
+  }
+  .feature-card:hover { background: rgba(255,255,255,0.04); }
+  .feature-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(232,255,71,0.08); border: 1px solid rgba(232,255,71,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 20px;
+  }
+  .feature-title {
+    font-size: 15px; font-weight: 800; color: var(--white);
+    margin-bottom: 10px; letter-spacing: -0.2px;
+  }
+  .feature-desc { font-size: 13px; color: rgba(255,255,255,0.4); line-height: 1.7; }
+  .feature-tag {
+    display: inline-block; margin-top: 16px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 100px;
+    background: rgba(232,255,71,0.1); color: var(--accent);
+  }
+
+  /* ── PRICING ───────────────────────────────────────────────── */
+  .pricing-section { text-align: center; }
+  .pricing-toggle {
+    display: inline-flex; background: rgba(255,255,255,0.05);
+    border-radius: 100px; padding: 4px; margin: 40px auto 0;
+    gap: 4px;
+  }
+  .pricing-toggle button {
+    background: none; border: none; cursor: pointer;
+    padding: 8px 20px; border-radius: 100px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+    transition: all 0.2s;
+  }
+  .pricing-toggle button.active {
+    background: var(--white); color: var(--black);
+  }
+  .pricing-cards {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 2px; margin-top: 48px;
+    border: 1px solid rgba(255,255,255,0.06);
+    max-width: 760px; margin-left: auto; margin-right: auto;
+  }
+  .price-card {
+    padding: 44px 40px; text-align: left;
+    background: rgba(255,255,255,0.02);
+    position: relative;
+  }
+  .price-card.featured {
+    background: var(--white); color: var(--black);
+  }
+  .price-card-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.25em;
+    text-transform: uppercase; color: rgba(255,255,255,0.3);
+    margin-bottom: 24px;
+  }
+  .price-card.featured .price-card-label { color: rgba(0,0,0,0.4); }
+  .price-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px; line-height: 1; letter-spacing: -1px;
+    color: var(--white); margin-bottom: 4px;
+  }
+  .price-card.featured .price-amount { color: var(--black); }
+  .price-per {
+    font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.3);
+    letter-spacing: 0.1em; margin-bottom: 32px;
+  }
+  .price-card.featured .price-per { color: rgba(0,0,0,0.4); }
+  .price-currency-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; color: rgba(255,255,255,0.2);
+    letter-spacing: 0.1em; margin-bottom: 32px;
+    display: block;
+  }
+  .price-card.featured .price-currency-note { color: rgba(0,0,0,0.3); }
+  .price-features { list-style: none; space-y: 12px; margin-bottom: 36px; }
+  .price-features li {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: rgba(255,255,255,0.55);
+    padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .price-card.featured .price-features li { color: rgba(0,0,0,0.6); border-bottom-color: rgba(0,0,0,0.06); }
+  .price-features li::before { content: '—'; color: rgba(255,255,255,0.2); font-size: 10px; flex-shrink: 0; }
+  .price-card.featured .price-features li::before { color: rgba(0,0,0,0.25); }
+  .price-features li.included { color: rgba(255,255,255,0.9); font-weight: 600; }
+  .price-card.featured .price-features li.included { color: var(--black); font-weight: 700; }
+  .price-features li.included::before { content: '✓'; color: var(--accent) !important; font-size: 11px; }
+  .price-cta {
+    display: block; text-align: center;
+    padding: 14px 28px; border-radius: 100px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.15em;
+    text-transform: uppercase; text-decoration: none; transition: all 0.2s;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .price-card.featured .price-cta {
+    background: var(--black); color: var(--white); border-color: transparent;
+  }
+  .price-cta:hover { transform: scale(1.02); opacity: 0.85; }
+  .price-badge {
+    position: absolute; top: 20px; right: 20px;
+    background: var(--accent); color: var(--black);
+    font-size: 8px; font-weight: 900; letter-spacing: 0.2em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 100px;
+  }
+  .pricing-norefund {
+    margin-top: 20px; max-width: 760px; margin-left: auto; margin-right: auto;
+    padding: 14px 20px;
+    background: rgba(255,68,68,0.06); border: 1px solid rgba(255,68,68,0.15);
+    border-radius: 12px; text-align: center;
+  }
+  .pricing-norefund p {
+    font-size: 10px; color: rgba(255,100,100,0.7); font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .geo-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 12px; padding: 6px 14px;
+    background: rgba(255,255,255,0.04); border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 10px; color: rgba(255,255,255,0.4);
+    font-family: 'DM Mono', monospace; letter-spacing: 0.1em;
+  }
+
+  /* ── COMPARISON ────────────────────────────────────────────── */
+  .vs-section { text-align: center; }
+  .vs-table {
+    width: 100%; border-collapse: collapse; margin-top: 48px;
+    text-align: left; font-size: 13px;
+  }
+  .vs-table th {
+    padding: 16px 20px; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .vs-table th.hl { color: var(--white); }
+  .vs-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.5);
+  }
+  .vs-table td.hl { color: var(--white); font-weight: 600; }
+  .vs-table td.check { color: var(--accent); font-size: 15px; }
+  .vs-table td.cross { color: rgba(255,255,255,0.2); font-size: 15px; }
+  .vs-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ── FOOTER ────────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 48px 40px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 40px; flex-wrap: wrap;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .footer-brand .nav-logo-text { font-size: 16px; }
+  .footer-brand p {
+    font-size: 11px; color: rgba(255,255,255,0.2); margin-top: 8px;
+    max-width: 240px; line-height: 1.6;
+  }
+  .footer-links { display: flex; gap: 40px; flex-wrap: wrap; }
+  .footer-col h4 {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.25em;
+    text-transform: uppercase; color: rgba(255,255,255,0.3);
+    margin-bottom: 14px;
+  }
+  .footer-col a {
+    display: block; font-size: 12px; color: rgba(255,255,255,0.4);
+    text-decoration: none; margin-bottom: 8px; transition: color 0.2s;
+  }
+  .footer-col a:hover { color: var(--white); }
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.04);
+    padding: 24px 40px; max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .footer-bottom p {
+    font-size: 10px; color: rgba(255,255,255,0.15);
+    font-family: 'DM Mono', monospace; letter-spacing: 0.05em;
+  }
+
+  /* ── ANIMATIONS ────────────────────────────────────────────── */
+  .fade-up {
+    opacity: 0; transform: translateY(32px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── RESPONSIVE ────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .hero { padding: 100px 24px 60px; }
+    section { padding: 70px 24px; }
+    .pricing-cards { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    footer { padding: 40px 24px; flex-direction: column; }
+    .footer-bottom { padding: 20px 24px; flex-direction: column; }
+    .risk-banner { padding: 14px 20px; }
+    .vs-table { font-size: 11px; }
+    .vs-table th, .vs-table td { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">TF</div>
+    <span class="nav-logo-text">TradeFlow</span>
+  </a>
+  <div class="nav-cta">
+    <a href="https://tradeflowstudioapp.netlify.app" class="nav-login">Log In</a>
+    <a href="https://tradeflowstudioapp.netlify.app" class="btn-primary">
+      Start Free
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</nav>
+
+<!-- RISK BANNER -->
+<div class="risk-banner">
+  <p><strong>⚠️ Trading is risky and 99.9% of people lose money.</strong> This is not financial advice — do not risk money you cannot afford to lose. TradeFlow Studio is not responsible for any trading losses. Past performance shown in journals is not indicative of future results.</p>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+  <div style="position:relative; z-index:2;">
+    <div class="hero-label">Trading Journal · Built for Serious Traders</div>
+    <h1>TRADE<br/>SMARTER.<br/><span>NOT HARDER.</span></h1>
+    <p class="hero-sub">Log every trade. Understand your edge. Get AI-powered weekly debriefs that cut through the noise and show you exactly where you're leaking money.</p>
+    <div class="hero-actions">
+      <a href="https://tradeflowstudioapp.netlify.app" class="btn-accent">
+        Start Free — No Card Required
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <p class="hero-note">Free forever · No credit card · Upgrade anytime</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-num">100%</span>
+        <span class="hero-stat-label">Your Data</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">0</span>
+        <span class="hero-stat-label">Ads Ever</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">AI</span>
+        <span class="hero-stat-label">Weekly Debrief</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" style="max-width:1100px; margin:0 auto; padding:80px 40px;">
+  <div class="fade-up">
+    <div class="section-label">What's inside</div>
+    <h2>EVERY TOOL<br/>YOU NEED TO <span>WIN</span></h2>
+  </div>
+  <div class="features-grid fade-up" style="transition-delay:0.1s;">
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Trade Journal & Log</div>
+      <p class="feature-desc">Log every trade with symbol auto-detection, P&L calculation, setup tags, and psychological notes. Works for Stocks, Forex, and Futures.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-title">AI Weekly Debrief</div>
+      <p class="feature-desc">Every Sunday, your week's trades are processed by AI. You get a clinical breakdown of your edge, biggest leaks, emotional patterns, and one hard rule for next week.</p>
+      <span class="feature-tag">Pro</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <div class="feature-title">Performance Analytics</div>
+      <p class="feature-desc">Win rate, profit factor, best days, worst setups, R:R distribution — every metric you need to spot patterns and cut bad habits.</p>
+      <span class="feature-tag">Pro</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🗓️</div>
+      <div class="feature-title">Trade Calendar</div>
+      <p class="feature-desc">See your P&L across every day of the month at a glance. Instantly spot your best and worst trading days and the patterns behind them.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧘</div>
+      <div class="feature-title">Psychology Tracker</div>
+      <p class="feature-desc">Track emotional states, plan adherence, and self-sabotage patterns. Know if your psychology is your biggest edge — or your biggest leak.</p>
+      <span class="feature-tag">Pro</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Secure & Private</div>
+      <p class="feature-desc">Your trading data is encrypted at rest and in transit. Row-level security ensures no one — not even us — can read another user's trades.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="pricing-section fade-up" style="max-width:1100px; margin:0 auto; padding:80px 40px;">
+  <div class="section-label">Simple pricing</div>
+  <h2>ONE PLAN.<br/>NO <span>TRICKS.</span></h2>
+  <p style="color:rgba(255,255,255,0.4); max-width:400px; margin:16px auto 0; font-size:14px;">Start free. Upgrade when you're ready to unlock your full edge.</p>
+
+  <!-- Geo badge - populated by JS -->
+  <div class="geo-badge" id="geo-badge">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+    <span id="geo-label">Detecting your region...</span>
+  </div>
+
+  <!-- Billing toggle -->
+  <div class="pricing-toggle">
+    <button class="active" id="btn-monthly" onclick="setPeriod('monthly')">Monthly</button>
+    <button id="btn-annual" onclick="setPeriod('annual')">Annual <span style="color:var(--accent);font-size:9px;margin-left:4px;">–20%</span></button>
+  </div>
+
+  <div class="pricing-cards">
+    <!-- Free -->
+    <div class="price-card">
+      <div class="price-card-label">Free Terminal</div>
+      <div class="price-amount">$0</div>
+      <div class="price-per">forever</div>
+      <span class="price-currency-note">No credit card required</span>
+      <ul class="price-features">
+        <li class="included">15 trades / month</li>
+        <li class="included">Trade log & journal</li>
+        <li class="included">Calendar view</li>
+        <li>AI weekly debrief</li>
+        <li>Full analytics</li>
+        <li>Psychology tracker</li>
+        <li>Multi-account</li>
+      </ul>
+      <a href="https://tradeflowstudioapp.netlify.app" class="price-cta">Start Free</a>
+    </div>
+
+    <!-- Pro -->
+    <div class="price-card featured">
+      <div class="price-badge">Most Popular</div>
+      <div class="price-card-label">Studio Pro</div>
+      <div class="price-amount" id="pro-price">$8.99</div>
+      <div class="price-per" id="pro-period">/month, billed monthly</div>
+      <span class="price-currency-note" id="pro-currency-note"></span>
+      <ul class="price-features">
+        <li class="included">Unlimited trades</li>
+        <li class="included">Trade log & journal</li>
+        <li class="included">Calendar view</li>
+        <li class="included">AI weekly debrief</li>
+        <li class="included">Full analytics</li>
+        <li class="included">Psychology tracker</li>
+        <li class="included">Multi-account</li>
+      </ul>
+      <a href="https://tradeflowstudioapp.netlify.app" class="price-cta">Upgrade to Pro</a>
+    </div>
+  </div>
+
+  <div class="pricing-norefund">
+    <p>⚠️ All Pro subscriptions are <strong>non-refundable</strong>. Cancellation takes effect immediately — no access for the remainder of the billing period. No exceptions. Please try the Free plan before upgrading.</p>
+  </div>
+</section>
+
+<!-- VS TRADEZELLA -->
+<section id="compare" class="vs-section fade-up" style="max-width:1100px; margin:0 auto; padding:80px 40px;">
+  <div class="section-label">How we compare</div>
+  <h2>WHY SWITCH<br/>TO <span>TRADEFLOW</span></h2>
+  <table class="vs-table">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th class="hl">TradeFlow Studio</th>
+        <th>Tradezella</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Trade Journalling</td><td class="check hl">✓</td><td class="check">✓</td></tr>
+      <tr><td>Calendar View</td><td class="check hl">✓</td><td class="check">✓</td></tr>
+      <tr><td>AI Weekly Debrief</td><td class="check hl">✓ Every Sunday</td><td class="cross">✗</td></tr>
+      <tr><td>Psychology Tracking</td><td class="check hl">✓ Built-in</td><td class="cross">Partial</td></tr>
+      <tr><td>Futures Support</td><td class="check hl">✓ Full tick maps</td><td class="cross">Limited</td></tr>
+      <tr><td>Free Tier</td><td class="check hl">✓ 15 trades/mo</td><td class="cross">Trial only</td></tr>
+      <tr><td>Pro Price</td><td class="hl" id="compare-price">$8.99 / mo</td><td>~$29.99 / mo</td></tr>
+      <tr><td>No Ads. Ever.</td><td class="check hl">✓</td><td class="cross">—</td></tr>
+      <tr><td>Data Privacy</td><td class="hl">Row-Level Security</td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- FINAL CTA -->
+<section style="max-width:1100px; margin:0 auto; padding:60px 40px 100px; text-align:center;" class="fade-up">
+  <div class="section-label">Get started today</div>
+  <h2>STOP GUESSING.<br/>START <span>KNOWING.</span></h2>
+  <p style="color:rgba(255,255,255,0.4); max-width:380px; margin:20px auto 40px; font-size:14px;">Free to start. No card required. Upgrade when you're ready for the full debrief.</p>
+  <a href="https://tradeflowstudioapp.netlify.app" class="btn-accent">
+    Open Your Free Journal
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">
+    <div class="nav-logo">
+      <div class="nav-logo-icon">TF</div>
+      <span class="nav-logo-text">TradeFlow Studio</span>
+    </div>
+    <p>A trading journal built for serious traders. Log, analyse, and sharpen your edge.</p>
+  </div>
+  <div class="footer-links">
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#compare">Compare</a>
+      <a href="https://tradeflowstudioapp.netlify.app">Launch App</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#" id="footer-terms">Terms & Conditions</a>
+      <a href="#" id="footer-privacy">Privacy Policy</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="mailto:support@tradeflowstudio.com">support@tradeflowstudio.com</a>
+      <a href="mailto:legal@tradeflowstudio.com">legal@tradeflowstudio.com</a>
+    </div>
+  </div>
+</footer>
+<div class="footer-bottom">
+  <p>© 2025 TradeFlow Studio. All rights reserved. Ontario, Canada.</p>
+  <p>Trading involves substantial risk of loss. Not financial advice.</p>
+</div>
+
+<!-- LEGAL MODAL (links to app for full docs) -->
+<div id="legal-modal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#111; border:1px solid rgba(255,255,255,0.08); border-radius:24px; max-width:560px; width:100%; padding:40px; position:relative; max-height:80vh; overflow-y:auto;">
+    <button onclick="closeLegal()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.06); border:none; border-radius:8px; width:32px; height:32px; color:rgba(255,255,255,0.5); cursor:pointer; font-size:16px;">✕</button>
+    <div id="legal-content"></div>
+  </div>
+</div>
+
+<script>
+// ── GEO-BASED PRICING ─────────────────────────────────────────────────────────
+const PRICING = {
+  CA: { code: 'CAD', symbol: 'CA$', flag: '🇨🇦', monthly: '11.99',  annual: '9.59',  label: 'Canada · CAD' },
+  US: { code: 'USD', symbol: '$',   flag: '🇺🇸', monthly: '8.99',   annual: '7.19',  label: 'United States · USD' },
+  IN: { code: 'INR', symbol: '₹',   flag: '🇮🇳', monthly: '749',    annual: '599',   label: 'India · INR' },
+  GB: { code: 'GBP', symbol: '£',   flag: '🇬🇧', monthly: '7.49',   annual: '5.99',  label: 'United Kingdom · GBP' },
+  EU: { code: 'EUR', symbol: '€',   flag: '🇪🇺', monthly: '8.49',   annual: '6.79',  label: 'Europe · EUR' },
+  AU: { code: 'AUD', symbol: 'A$',  flag: '🇦🇺', monthly: '13.99',  annual: '11.19', label: 'Australia · AUD' },
+  DEFAULT: { code: 'USD', symbol: '$', flag: '🌐', monthly: '8.99', annual: '7.19', label: 'International · USD' },
+};
+
+// EU countries
+const EU_CODES = ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'];
+
+let currentPricing = PRICING.DEFAULT;
+let currentPeriod = 'monthly';
+
+async function detectGeo() {
+  try {
+    const r = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) });
+    const d = await r.json();
+    const cc = d.country_code || 'DEFAULT';
+
+    if (cc === 'CA') currentPricing = PRICING.CA;
+    else if (cc === 'US') currentPricing = PRICING.US;
+    else if (cc === 'IN') currentPricing = PRICING.IN;
+    else if (cc === 'GB') currentPricing = PRICING.GB;
+    else if (cc === 'AU') currentPricing = PRICING.AU;
+    else if (EU_CODES.includes(cc)) currentPricing = PRICING.EU;
+    else currentPricing = PRICING.DEFAULT;
+  } catch (e) {
+    currentPricing = PRICING.DEFAULT;
+  }
+  updatePricing();
+}
+
+function updatePricing() {
+  const p = currentPricing;
+  const isAnnual = currentPeriod === 'annual';
+  const price = isAnnual ? p.annual : p.monthly;
+  const period = isAnnual ? `/month, billed annually` : `/month, billed monthly`;
+  const savingsNote = isAnnual ? `Billed ${p.symbol}${(parseFloat(p.annual) * 12).toFixed(2)} ${p.code}/year — save 20%` : ``;
+
+  document.getElementById('pro-price').textContent = `${p.symbol}${price}`;
+  document.getElementById('pro-period').textContent = period;
+  document.getElementById('pro-currency-note').textContent = savingsNote;
+  document.getElementById('geo-label').textContent = `${p.flag}  ${p.label}`;
+  document.getElementById('compare-price').textContent = `${p.symbol}${p.monthly} / mo`;
+}
+
+function setPeriod(period) {
+  currentPeriod = period;
+  document.getElementById('btn-monthly').className = period === 'monthly' ? 'active' : '';
+  document.getElementById('btn-annual').className = period === 'annual' ? 'active' : '';
+  updatePricing();
+}
+
+detectGeo();
+
+// ── LEGAL MODAL ───────────────────────────────────────────────────────────────
+const LEGAL_LINKS = {
+  terms: `<h3 style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#f5f4f0;margin-bottom:8px;">Terms & Conditions</h3>
+    <p style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:24px;">Effective: February 1, 2025</p>
+    <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:16px;">Full Terms & Conditions are accessible within the TradeFlow Studio app. Key points:</p>
+    <ul style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.9;padding-left:20px;">
+      <li>Service is a journalling tool only — not financial advice</li>
+      <li>All subscription fees are <strong style="color:#ff4444;">non-refundable, no exceptions</strong></li>
+      <li>Cancellation takes effect immediately — no end-of-period access</li>
+      <li>We may terminate accounts at our sole discretion for Terms violations</li>
+      <li>Governed by Ontario, Canada law</li>
+      <li>Apple is not responsible for the iOS app (Apple EULA provisions apply)</li>
+    </ul>
+    <a href="https://tradeflowstudioapp.netlify.app" style="display:inline-block;margin-top:24px;font-size:11px;color:rgba(255,255,255,0.4);text-decoration:underline;">Read full Terms in the app →</a>`,
+
+  privacy: `<h3 style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#f5f4f0;margin-bottom:8px;">Privacy Policy</h3>
+    <p style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:24px;">Effective: February 1, 2025</p>
+    <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:16px;">Your data is yours. We never sell it. Key points:</p>
+    <ul style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.9;padding-left:20px;">
+      <li>Trade data stored encrypted (AES-256) on Supabase / AWS</li>
+      <li>AI insights use anonymised statistical summaries only</li>
+      <li>Payments via Stripe — we never see your card number</li>
+      <li>GDPR · CCPA · PIPEDA compliant — your rights are fully honoured</li>
+      <li>Data deleted within 30 days of account closure</li>
+      <li>No advertising cookies. No tracking. No data brokers.</li>
+    </ul>
+    <a href="https://tradeflowstudioapp.netlify.app" style="display:inline-block;margin-top:24px;font-size:11px;color:rgba(255,255,255,0.4);text-decoration:underline;">Read full Privacy Policy in the app →</a>`,
+};
+
+document.getElementById('footer-terms').addEventListener('click', (e) => { e.preventDefault(); openLegal('terms'); });
+document.getElementById('footer-privacy').addEventListener('click', (e) => { e.preventDefault(); openLegal('privacy'); });
+
+function openLegal(type) {
+  document.getElementById('legal-content').innerHTML = LEGAL_LINKS[type];
+  const modal = document.getElementById('legal-modal');
+  modal.style.display = 'flex';
+}
+function closeLegal() {
+  document.getElementById('legal-modal').style.display = 'none';
+}
+document.getElementById('legal-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeLegal();
+});
+
+// ── SCROLL ANIMATIONS ─────────────────────────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

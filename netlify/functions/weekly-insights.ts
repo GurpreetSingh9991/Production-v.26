@@ -12,7 +12,6 @@
 //   VITE_GEMINI_API_KEY
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { schedule } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI } from '@google/genai';
 
@@ -98,21 +97,21 @@ const buildPayload = (trades: any[]) => {
 };
 
 // ── AI Generator ─────────────────────────────────────────────────────────
-const generateInsight = async (payload: object): Promise<string> => {
+const generateInsight = async (payload: object, tradeCount: number): Promise<string> => {
   const resp = await ai.models.generateContent({
     model: 'gemini-2.0-flash',
-    contents: `You are an elite trading performance coach. Weekly debrief for a trader.
+    contents: `You are an elite trading performance coach analysing a trader's weekly journal. This data includes ALL trades logged this week — manual entries, broker imports, and CSV uploads.
 
-DATA: ${JSON.stringify(payload)}
+DATA (${tradeCount} trades): ${JSON.stringify(payload)}
 
-Write a focused weekly review:
-1. **Edge** — profit factor + win rate verdict
-2. **Leak** — worst setup, biggest loss, emotional tags
-3. **Psychology** — plan adherence signal
-4. **Bias** — worst day-of-week by P&L
-5. **Hard Rule** — one specific rule for next week
+Write a concise but insightful weekly debrief:
+1. **Edge Assessment** — profit factor + win rate verdict. Is their edge real or luck?
+2. **Key Leak** — worst setup, biggest loss, emotional triggers on losing trades
+3. **Psychology & Discipline** — plan adherence %, emotional states, self-sabotage patterns
+4. **Session Bias** — best and worst day-of-week by P&L, timing patterns
+5. **One Hard Rule** — single specific, actionable rule for next week
 
-Bold headers. Clinical, data-driven. Under 250 words. Reference actual numbers.`,
+Clinical, data-driven, reference actual numbers. Bold headers. Under 280 words.`,
     config: { temperature: 0.65, topP: 0.9 }
   });
   return resp.text || 'Analysis unavailable.';
@@ -146,7 +145,7 @@ const handler = async () => {
       // Fetch this week's trades for the user
       const { data: trades, error: tradesError } = await supabase
         .from('trades')
-        .select('symbol, pnl, rr, setup_type, followed_plan, emotional_tags, date')
+        .select('symbol, pnl, rr, setup_type, followed_plan, emotional_tags, date, asset_type, side, narrative, mistakes, psychology, result, result_grade, tags')
         .eq('user_id', user.id)
         .gte('date', mondayISO);
 
@@ -158,7 +157,7 @@ const handler = async () => {
 
       // Build compact payload + generate insight
       const payload = buildPayload(trades);
-      const insight = await generateInsight(payload);
+      const insight = await generateInsight(payload, trades.length);
 
       // UPSERT — always replaces the single row, old insight gone, no storage growth
       const { error: saveError } = await supabase
@@ -197,6 +196,5 @@ const handler = async () => {
   return { statusCode: 200, body: summary };
 };
 
-// Export as Netlify scheduled function
-export { handler as default };
-module.exports.handler = schedule('0 18 * * 5', handler);
+// Export handler for Netlify (schedule is defined in netlify.toml)
+export { handler };

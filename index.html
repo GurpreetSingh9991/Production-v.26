@@ -1,135 +1,297 @@
-import React from 'react';
-import { 
-  PlusCircle, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Minus,
-  TrendingUp,
-  Target,
-  DollarSign,
-  Award,
-  Filter,
-  Download,
-  Upload,
-  ExternalLink,
-  Trash2,
-  Edit,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  LineChart,
-  CalendarDays,
-  Cloud,
-  Settings,
-  RefreshCw,
-  Info,
-  Clock,
-  Activity,
-  LogOut,
-  BarChart3,
-  Globe,
-  Zap,
-  LayoutDashboard,
-  Plus,
-  Quote,
-  Eye,
-  Mail,
-  BrainCircuit,
-  History,
-  ScrollText,
-  Sparkles
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>TradeFlow | Studio</title>
+    <!-- Apple App Store / PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TradeFlow">
+    <meta name="theme-color" content="#f0f0f0">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Favicon & PWA Icons -->
+    <link rel="icon" type="image/png" href="/icon.png?v=2">
+    <link rel="apple-touch-icon" href="/icon.png?v=2">
+    <link rel="apple-touch-icon" sizes="120x120" href="/icon.png?v=2">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon.png?v=2">
+    <link rel="manifest" href="/manifest.json">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sar: env(safe-area-inset-right);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+            --nav-height: 64px;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #D6D6D6;
+            color: #1a1a1a;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            overflow: hidden; 
+            min-height: 100dvh;
+            height: 100dvh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+            position: fixed; 
+            overflow-x: hidden;
+        }
+        #root {
+            min-height: 100dvh;
+            height: 100dvh;
+            width: 100vw;
+            overflow-x: hidden;
+        }
 
-export const COLORS = {
-  WIN: '#10b981',
-  LOSS: '#f43f5e',
-  BE: '#94a3b8',
-  PRIMARY: '#000000', 
-  SECONDARY: '#1c1c1c',
-  BG_LIGHT: '#D6D6D6',
-  MISTAKES: {
-    LOW: '#EAB308',
-    MEDIUM: '#F59E0B',
-    HIGH: '#F43F5E',
-    CRITICAL: '#DC2626'
+        /* Standardized Desktop Panels */
+        .tf-sidebar-rail {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            height: 100dvh;
+            width: 64px;
+            background: #1a1a1a;
+            border-radius: 0;
+            padding: 16px 0;
+            z-index: 201;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tf-sidebar {
+            position: fixed;
+            top: 16px;
+            bottom: 16px;
+            height: calc(100dvh - 32px);
+            z-index: 200;
+            pointer-events: auto;
+            border-radius: 2rem;
+        }
+
+        .apple-glass {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000;
+            will-change: transform, opacity;
+            clip-path: inset(0 round 2rem);
+        }
+
+        /* High Fidelity Frosted Glass Effect - Seamless Fade Version */
+        .frosted-glass-header {
+            backdrop-filter: blur(28px) saturate(200%);
+            -webkit-backdrop-filter: blur(28px) saturate(200%);
+            background: rgba(242, 242, 242, 0.65);
+            border-bottom: none;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .frosted-glass-header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(
+                to bottom,
+                rgba(242, 242, 242, 0.18) 0%,
+                transparent 100%
+            );
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        .frosted-glass-nav {
+            backdrop-filter: blur(28px) saturate(200%);
+            -webkit-backdrop-filter: blur(28px) saturate(200%);
+            background: rgba(242, 242, 242, 0.65);
+            border-top: none;
+            position: relative;
+            z-index: 100;
+        }
+
+        .frosted-glass-nav::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(
+                to top,
+                rgba(242, 242, 242, 0.18) 0%,
+                transparent 100%
+            );
+            pointer-events: none;
+            z-index: 99;
+        }
+        
+        .safe-area-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+        }
+
+        /* Safe Area Utilities */
+        .pt-safe { padding-top: var(--sat); }
+        .pb-safe { padding-bottom: var(--sab); }
+        .pl-safe { padding-left: var(--sal); }
+        .pr-safe { padding-right: var(--sar); }
+        .mt-safe { margin-top: var(--sat); }
+        .mb-safe { margin-bottom: var(--sab); }
+
+        .pb-nav-safe { 
+            padding-bottom: calc(var(--nav-height) + var(--sab) + 16px); 
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 0px;
+        }
+        
+        .squircle {
+            border-radius: 2rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-reagle {
+            animation: fadeIn 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+
+        .touch-scroll {
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        /* ── Smooth page & component animations ──────────────────────── */
+        @keyframes slideUpFade {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideDownFade {
+          from { opacity: 0; transform: translateY(-10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.94); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes shimmer {
+          0%   { background-position: -400px 0; }
+          100% { background-position: 400px 0; }
+        }
+        @keyframes slideInFromRight {
+          from { opacity: 0; transform: translateX(20px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes popIn {
+          0%   { opacity: 0; transform: scale(0.85); }
+          70%  { transform: scale(1.04); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-6px); }
+        }
+        @keyframes gradientShift {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+
+        /* Tailwind-compatible animate-in utility support */
+        .animate-in { animation-fill-mode: both; }
+        .fade-in { animation-name: fadeIn; }
+        .slide-in-from-bottom-2 { --tw-enter-translate-y: 8px; }
+        .slide-in-from-bottom-4 { --tw-enter-translate-y: 16px; }
+        .slide-in-from-top-2 { --tw-enter-translate-y: -8px; }
+        .slide-in-from-right-2 { --tw-enter-translate-x: 8px; }
+        .zoom-in-95 { --tw-enter-scale: 0.95; }
+        .duration-200 { animation-duration: 200ms; }
+        .duration-300 { animation-duration: 300ms; }
+        .duration-500 { animation-duration: 500ms; }
+        .duration-700 { animation-duration: 700ms; }
+        .duration-1000 { animation-duration: 1000ms; }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(calc(var(--tw-enter-translate-y, 6px))); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .zoom-in-95.animate-in {
+          animation: scaleIn var(--animation-duration, 300ms) cubic-bezier(0.19, 1, 0.22, 1) both;
+        }
+
+        /* Sidebar nav tooltip smooth reveal */
+        .group\/nav:hover .group-hover\/nav\:opacity-100 { opacity: 1; }
+        .group\/nav:hover .group-hover\/nav\:translate-x-0 { transform: translate(0, -50%); }
+
+        /* Spring-style card hover */
+        .hover\:scale-\[1\.02\]:hover { transform: scale(1.02); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .hover\:scale-\[1\.01\]:hover { transform: scale(1.01); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        /* Staggered children animation */
+        .stagger > *:nth-child(1) { animation-delay: 0ms; }
+        .stagger > *:nth-child(2) { animation-delay: 50ms; }
+        .stagger > *:nth-child(3) { animation-delay: 100ms; }
+        .stagger > *:nth-child(4) { animation-delay: 150ms; }
+        .stagger > *:nth-child(5) { animation-delay: 200ms; }
+        .stagger > *:nth-child(6) { animation-delay: 250ms; }
+
+        /* Mobile bottom nav active indicator pulse */
+        @keyframes navPulse {
+          0%, 100% { transform: scale(1); opacity: 0.6; }
+          50%       { transform: scale(1.15); opacity: 1; }
+        }
+
+        /* Smooth scrollbar */
+        * { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.1) transparent; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        /* Reduce motion for accessibility */
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.95.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.564.0",
+    "path": "https://esm.sh/path@^0.12.7",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.42.0"
   }
-};
-
-export const SIDES = ['LONG', 'SHORT'] as const;
-export const RESULTS = ['WIN', 'LOSS', 'BE'] as const;
-export const GRADES = ['A+', 'A', 'B', 'C'] as const;
-export const BIASES = ['UP', 'DOWN', 'SIDEWAYS'] as const;
-export const SETUP_TYPES = ['A', 'B', 'C', 'D'] as const;
-export const ASSET_TYPES = ['STOCKS', 'FOREX', 'FUTURES'] as const;
-
-export const TRADER_QUOTES = [
-  { text: "The goal of a successful trader is to make the best trades. Money is secondary.", author: "Alexander Elder" },
-  { text: "I’m always thinking about losing money as opposed to making money. Don't focus on making money, focus on protecting what you have.", author: "Paul Tudor Jones" },
-  { text: "The market is a device for transferring money from the impatient to the patient.", author: "Warren Buffett" },
-  { text: "It's not whether you're right or wrong that's important, but how much money you make when you're right and how much you lose when you're wrong.", author: "George Soros" },
-  { text: "Cutting losses is the most important rule of trading. If you can't take a small loss, sooner or later you will take the mother of all losses.", author: "Marty Schwartz" },
-  { text: "The desire for constant action irrespective of underlying conditions is responsible for many losses on Wall Street.", author: "Jesse Livermore" },
-  { text: "In this business, if you're good, you're right six times out of ten. You're never going to be right nine times out of ten.", author: "Peter Lynch" },
-  { text: "A peak performance trader is totally committed to being the best and doing whatever it takes to be the best.", author: "Van K. Tharp" },
-  { text: "Win or lose, everybody gets what they want out of the market. Some people seem to like to lose, so they win by losing money.", author: "Ed Seykota" },
-  { text: "Trading is not about being right. It is about a process of identifying and managing probabilities.", author: "Mark Douglas" }
-];
-
-export const LogoIcon = ({ className = "w-10 h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="24" fill="black"/>
-    <path 
-      d="M30 65 L 50 45 L 70 65" 
-      stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"
-    />
-    <path d="M50 45 L 70 25" stroke="white" strokeWidth="8" strokeLinecap="round" />
-  </svg>
-);
-
-export const ICONS = {
-  Dashboard: LayoutDashboard,
-  Add: PlusCircle,
-  Win: ArrowUpRight,
-  Loss: ArrowDownRight,
-  Neutral: Minus,
-  Trending: TrendingUp,
-  Target: Target,
-  Dollar: DollarSign,
-  Grade: Award,
-  Filter: Filter,
-  Export: Download,
-  Download: Download,
-  Import: Upload,
-  Upload: Upload,
-  External: ExternalLink,
-  Delete: Trash2,
-  Edit: Edit,
-  Close: X,
-  Logo: LogoIcon,
-  ToggleLeft: ChevronLeft,
-  ToggleRight: ChevronRight,
-  ChevronRight: ChevronRight,
-  ChevronLeft: ChevronLeft,
-  Performance: LineChart,
-  Journal: ScrollText,
-  Insights: TrendingUp,
-  Calendar: CalendarDays,
-  Cloud: Cloud,
-  Settings: Settings,
-  Sync: RefreshCw,
-  Info: Info,
-  LineChart: LineChart,
-  Clock: Clock,
-  LogOut: LogOut,
-  Stocks: BarChart3,
-  Forex: Globe,
-  Futures: Zap,
-  Globe: Globe,
-  Zap: Zap,
-  Plus: Plus,
-  Quote: Quote,
-  Eye: Eye,
-  Mail: Mail,
-  Psychology: BrainCircuit,
-  AIIntelligence: Sparkles
-};
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
