@@ -8,12 +8,12 @@ interface LegalModalProps { doc: LegalDoc; onClose: () => void; }
 const PRIVACY_SECTIONS: { heading: string; body: string }[] = [
   {
     heading: '1. Who We Are',
-    body: `TradeFlow Studio ("TradeFlow", "we", "us", "our") is a trading journal and performance analytics platform operated from Ontario, Canada.
+    body: `TradeFlow Journal ("TradeFlow", "we", "us", "our") is a trading journal and performance analytics platform operated from Ontario, Canada.
 
 **Contact:**
-• General & Support: support@tradeflowstudio.com
-• Privacy Inquiries: privacy@tradeflowstudio.com
-• Legal: legal@tradeflowstudio.com
+• General & Support: support@tradeflowjournal.com
+• Privacy Inquiries: privacy@tradeflowjournal.com
+• Legal: legal@tradeflowjournal.com
 
 This Privacy Policy explains how we collect, use, disclose, and protect your personal information when you use our web application, mobile application, and related services (the "Service"). By using the Service, you consent to the practices described here.`
   },
@@ -85,13 +85,13 @@ We do not use advertising networks, social media pixels, or data brokers.`
   },
   {
     heading: '7. International Data Transfers',
-    body: `TradeFlow Studio is operated from Ontario, Canada. Our users are located globally. By using the Service, you acknowledge that your personal data may be transferred to, stored in, and processed in countries outside your country of residence — including Canada, the United States, and any country where our third-party processors maintain infrastructure.
+    body: `TradeFlow Journal is operated from Ontario, Canada. Our users are located globally. By using the Service, you acknowledge that your personal data may be transferred to, stored in, and processed in countries outside your country of residence — including Canada, the United States, and any country where our third-party processors maintain infrastructure.
 
 For transfers of personal data from the EEA, UK, or Switzerland to countries without adequate protection, we rely on:
 • **Standard Contractual Clauses (SCCs)** approved by the European Commission.
 • **UK International Data Transfer Agreements (IDTAs)** where applicable.
 
-You may request a copy of the relevant transfer mechanism by contacting privacy@tradeflowstudio.com.`
+You may request a copy of the relevant transfer mechanism by contacting privacy@tradeflowjournal.com.`
   },
   {
     heading: '8. Your Rights (GDPR · CCPA · PIPEDA)',
@@ -117,7 +117,7 @@ You may request a copy of the relevant transfer mechanism by contacting privacy@
 • Right to challenge accuracy and completeness.
 • Right to withdraw consent (subject to legal or contractual restrictions).
 
-To exercise any right, email **privacy@tradeflowstudio.com** with "Privacy Rights Request" in the subject line.`
+To exercise any right, email **privacy@tradeflowjournal.com** with "Privacy Rights Request" in the subject line.`
   },
   {
     heading: '9. Data Retention',
@@ -139,7 +139,7 @@ You can clear localStorage at any time through your browser settings, though thi
   },
   {
     heading: '11. Business Transfers',
-    body: `In the event that TradeFlow Studio undergoes a merger, acquisition, reorganisation, bankruptcy, dissolution, or sale of all or substantially all of its assets, your personal data may be transferred to the acquiring entity as part of that transaction.
+    body: `In the event that TradeFlow Journal undergoes a merger, acquisition, reorganisation, bankruptcy, dissolution, or sale of all or substantially all of its assets, your personal data may be transferred to the acquiring entity as part of that transaction.
 
 We will notify you via email and/or a prominent in-app notice at least **30 days** prior to your data becoming subject to a different privacy policy. You will be provided the opportunity to delete your account before the transfer takes effect.
 
@@ -147,9 +147,9 @@ In the event of insolvency proceedings, user data will be treated as an asset su
   },
   {
     heading: "12. Children's Privacy",
-    body: `TradeFlow Studio is not directed at individuals under the age of **16** (or the applicable age of digital consent in your jurisdiction).
+    body: `TradeFlow Journal is not directed at individuals under the age of **16** (or the applicable age of digital consent in your jurisdiction).
 
-If you believe a child has provided us with personal information without parental consent, contact privacy@tradeflowstudio.com immediately. We will promptly delete that information and terminate the associated account.`
+If you believe a child has provided us with personal information without parental consent, contact privacy@tradeflowjournal.com immediately. We will promptly delete that information and terminate the associated account.`
   },
   {
     heading: '13. Changes to This Policy',
@@ -162,9 +162,9 @@ Continued use after the effective date constitutes acceptance. If you do not agr
   },
   {
     heading: '14. Contact & Supervisory Authority',
-    body: `**Privacy:** privacy@tradeflowstudio.com
-**Support:** support@tradeflowstudio.com
-**Address:** TradeFlow Studio, Ontario, Canada
+    body: `**Privacy:** privacy@tradeflowjournal.com
+**Support:** support@tradeflowjournal.com
+**Address:** TradeFlow Journal, Ontario, Canada
 
 **EEA/UK users:** You have the right to lodge a complaint with your local supervisory authority (e.g., the Information Commissioner's Office in the UK, or your national DPA in the EU).`
   },
@@ -174,7 +174,7 @@ Continued use after the effective date constitutes acceptance. If you do not agr
 const TERMS_SECTIONS: { heading: string; body: string }[] = [
   {
     heading: '1. Agreement to Terms',
-    body: `These Terms & Conditions ("Terms") constitute a legally binding agreement between you ("User", "you") and **TradeFlow Studio** ("TradeFlow Studio", "we", "us"), operating from Ontario, Canada.
+    body: `These Terms & Conditions ("Terms") constitute a legally binding agreement between you ("User", "you") and **TradeFlow Journal** ("TradeFlow Journal", "we", "us"), operating from Ontario, Canada.
 
 By creating an account, clicking "Accept", or using the Service, you confirm:
 • You are at least **16 years of age** (or the applicable age of majority in your jurisdiction).
@@ -185,9 +185,9 @@ By creating an account, clicking "Accept", or using the Service, you confirm:
   },
   {
     heading: '2. Description of Service',
-    body: `TradeFlow Studio is a web-based and mobile trading journal application allowing traders to log, categorise, analyse, and review their own trading activity. The Service includes trade journalling, calendar and analytics tools (Pro plan), AI-powered weekly debrief reports via Google Gemini (Pro plan), and multi-broker account management (Pro plan).
+    body: `TradeFlow Journal is a web-based and mobile trading journal application allowing traders to log, categorise, analyse, and review their own trading activity. The Service includes trade journalling, calendar and analytics tools (Pro plan), AI-powered weekly debrief reports via Google Gemini (Pro plan), and multi-broker account management (Pro plan).
 
-The Service is a **personal journalling and performance analysis tool only.** TradeFlow Studio does not provide brokerage services, execution services, investment advice, financial planning, or any other regulated financial services. We are not a registered investment adviser, broker-dealer, or financial institution in any jurisdiction.`
+The Service is a **personal journalling and performance analysis tool only.** TradeFlow Journal does not provide brokerage services, execution services, investment advice, financial planning, or any other regulated financial services. We are not a registered investment adviser, broker-dealer, or financial institution in any jurisdiction.`
   },
   {
     heading: '3. ⚠️ Risk Warning and Financial Disclaimer',
@@ -195,9 +195,9 @@ The Service is a **personal journalling and performance analysis tool only.** Tr
 
 Trading involves significant risk. Past performance shown in your journal is not indicative of future results. Leverage can work against you as well as in your favour.
 
-**NOTHING IN THE SERVICE CONSTITUTES FINANCIAL OR INVESTMENT ADVICE.** All content generated by TradeFlow Studio — including AI-generated weekly debrief reports, performance statistics, drawdown metrics, and pattern analysis — is provided for **informational and educational purposes only**. It does not constitute investment advice, a recommendation to buy or sell any instrument, a trading signal, or an endorsement of any strategy.
+**NOTHING IN THE SERVICE CONSTITUTES FINANCIAL OR INVESTMENT ADVICE.** All content generated by TradeFlow Journal — including AI-generated weekly debrief reports, performance statistics, drawdown metrics, and pattern analysis — is provided for **informational and educational purposes only**. It does not constitute investment advice, a recommendation to buy or sell any instrument, a trading signal, or an endorsement of any strategy.
 
-You are **solely and exclusively responsible** for all trading decisions you make and their consequences. TradeFlow Studio expressly disclaims any liability for trading losses arising from your use of or reliance on any content generated by or displayed within the Service.`
+You are **solely and exclusively responsible** for all trading decisions you make and their consequences. TradeFlow Journal expressly disclaims any liability for trading losses arising from your use of or reliance on any content generated by or displayed within the Service.`
   },
   {
     heading: '4. "As Is" and "As Available" Disclaimer',
@@ -215,7 +215,7 @@ P&L calculations and performance metrics are generated based on data you provide
     heading: '5. User Accounts',
     body: `**5.1 Registration.** You must create an account using accurate, current, and complete information and keep it up to date.
 
-**5.2 Credentials.** You are solely responsible for maintaining the confidentiality of your credentials and for all activity under your account. Notify us immediately at support@tradeflowstudio.com of any suspected unauthorised use.
+**5.2 Credentials.** You are solely responsible for maintaining the confidentiality of your credentials and for all activity under your account. Notify us immediately at support@tradeflowjournal.com of any suspected unauthorised use.
 
 **5.3 One Person, One Account.** Each account may only be used by a single individual. You may not share credentials. Corporate multi-user accounts require a separate written agreement.
 
@@ -227,7 +227,7 @@ P&L calculations and performance metrics are generated based on data you provide
 
 **6.2 Auto-Renewal and Cancellation.** Subscriptions automatically renew at the end of each billing period unless cancelled before the renewal date. You authorise us (via Stripe) to charge your payment method on a recurring basis. Upon cancellation, your Pro access is terminated immediately and permanently. You will not retain access to Pro features for the remainder of any paid billing period. No credits or partial refunds are issued for any unused portion of a billing period under any circumstances.
 
-**6.3 No Refund Policy.** ALL SUBSCRIPTION FEES ARE NON-REFUNDABLE. By subscribing, you expressly agree that no refunds or credits will be issued under any circumstances, including but not limited to: early cancellation, partial use of the billing period, account termination (whether voluntary or by TradeFlow Studio), failure to use Pro-exclusive features, or dissatisfaction with the Service. This no-refund policy applies to both monthly and annual plans. Please ensure the Service meets your needs before subscribing — a Free plan is available for evaluation.
+**6.3 No Refund Policy.** ALL SUBSCRIPTION FEES ARE NON-REFUNDABLE. By subscribing, you expressly agree that no refunds or credits will be issued under any circumstances, including but not limited to: early cancellation, partial use of the billing period, account termination (whether voluntary or by TradeFlow Journal), failure to use Pro-exclusive features, or dissatisfaction with the Service. This no-refund policy applies to both monthly and annual plans. Please ensure the Service meets your needs before subscribing — a Free plan is available for evaluation.
 
 **6.4 Price Changes.** We will provide at least **30 days' notice** of price increases via email. Continued use constitutes acceptance.
 
@@ -237,26 +237,26 @@ P&L calculations and performance metrics are generated based on data you provide
   },
   {
     heading: '7. Termination and Suspension',
-    body: `**7.1 Termination by You.** Close your account at any time by contacting support@tradeflowstudio.com.
+    body: `**7.1 Termination by You.** Close your account at any time by contacting support@tradeflowjournal.com.
 
-**7.2 Termination or Suspension by Us.** TradeFlow Studio reserves the right, at its **sole discretion**, to suspend, restrict, or permanently terminate your account and access to the Service, **with or without prior notice**, for any reason including but not limited to:
+**7.2 Termination or Suspension by Us.** TradeFlow Journal reserves the right, at its **sole discretion**, to suspend, restrict, or permanently terminate your account and access to the Service, **with or without prior notice**, for any reason including but not limited to:
 • Violation of any provision of these Terms.
 • Fraudulent, abusive, or illegal activity.
 • Sharing, reselling, or attempting to resell your account.
 • Attempting to reverse engineer, scrape, or compromise the Service.
 • Providing false registration information.
 • Non-payment of subscription fees.
-• Any conduct we reasonably determine to be harmful to TradeFlow Studio, other users, or third parties.
+• Any conduct we reasonably determine to be harmful to TradeFlow Journal, other users, or third parties.
 
 **7.3 Effect of Termination.** Your right to access the Service ceases immediately. Sections 3, 4, 10, 11, 12, 13, 14, and 15 survive termination.
 
-**7.4 Appeals.** If you believe your account was terminated in error, contact support@tradeflowstudio.com within 30 days. We will review in good faith but reserve final discretion.`
+**7.4 Appeals.** If you believe your account was terminated in error, contact support@tradeflowjournal.com within 30 days. We will review in good faith but reserve final discretion.`
   },
   {
     heading: '8. User Data and Content',
     body: `**8.1 Your Ownership.** You retain full ownership of all trading data, notes, and other content you submit ("User Content").
 
-**8.2 Licence to Us.** You grant TradeFlow Studio a limited, non-exclusive, royalty-free, worldwide licence to process, store, display, and transmit your User Content solely to provide and improve the Service. This licence terminates when you delete the data or close your account.
+**8.2 Licence to Us.** You grant TradeFlow Journal a limited, non-exclusive, royalty-free, worldwide licence to process, store, display, and transmit your User Content solely to provide and improve the Service. This licence terminates when you delete the data or close your account.
 
 **8.3 Responsibility.** You are solely responsible for the accuracy of data you enter.
 
@@ -277,13 +277,13 @@ P&L calculations and performance metrics are generated based on data you provide
   },
   {
     heading: '10. Intellectual Property',
-    body: `All software, algorithms, UI designs, graphics, trademarks, logos, and other intellectual property in or associated with the Service are the exclusive property of TradeFlow Studio or its licensors, protected by applicable IP laws.
+    body: `All software, algorithms, UI designs, graphics, trademarks, logos, and other intellectual property in or associated with the Service are the exclusive property of TradeFlow Journal or its licensors, protected by applicable IP laws.
 
-Your licence to use the Service is: personal, non-exclusive, non-transferable, and revocable. "TradeFlow" and "TradeFlow Studio" are trademarks of TradeFlow Studio. You may not use our trademarks without prior written permission.`
+Your licence to use the Service is: personal, non-exclusive, non-transferable, and revocable. "TradeFlow" and "TradeFlow Journal" are trademarks of TradeFlow Journal. You may not use our trademarks without prior written permission.`
   },
   {
     heading: '11. Force Majeure',
-    body: `TradeFlow Studio shall not be liable for any failure or delay caused by circumstances beyond our reasonable control, including:
+    body: `TradeFlow Journal shall not be liable for any failure or delay caused by circumstances beyond our reasonable control, including:
 • Acts of God, natural disasters, floods, fires, or earthquakes.
 • Acts of government, war, terrorism, civil unrest, or public health emergencies.
 • Infrastructure failures by third-party providers (AWS, Supabase, Netlify, Stripe, Google) outside our direct control.
@@ -300,13 +300,13 @@ Our obligations shall be suspended for the duration of such events. We will make
 
 **12.2** THESE EXCLUSIONS APPLY WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), PRODUCT LIABILITY, OR ANY OTHER LEGAL THEORY, AND WHETHER OR NOT TRADEFLOW STUDIO HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-**12.3 Liability Cap.** Our total aggregate liability for all claims shall not exceed the greater of: (a) the total amount paid by you to TradeFlow Studio in the **12 months** preceding the claim, or (b) **CAD $100**.
+**12.3 Liability Cap.** Our total aggregate liability for all claims shall not exceed the greater of: (a) the total amount paid by you to TradeFlow Journal in the **12 months** preceding the claim, or (b) **CAD $100**.
 
 **12.4** Some jurisdictions do not allow these exclusions. In such jurisdictions, liability is limited to the greatest extent permitted by law.`
   },
   {
     heading: '13. Indemnification',
-    body: `You agree to defend, indemnify, and hold harmless TradeFlow Studio and its officers, directors, employees, contractors, agents, licensors, and suppliers from any claims, damages, obligations, losses, liabilities, costs, and expenses (including reasonable legal fees) arising from:
+    body: `You agree to defend, indemnify, and hold harmless TradeFlow Journal and its officers, directors, employees, contractors, agents, licensors, and suppliers from any claims, damages, obligations, losses, liabilities, costs, and expenses (including reasonable legal fees) arising from:
 • Your violation of any provision of these Terms or any applicable law.
 • Your User Content, including any claim that it infringes a third party's rights.
 • Your use or misuse of the Service.
@@ -319,17 +319,17 @@ This obligation survives termination of these Terms.`
     heading: '14. Apple App Store Provisions (iOS)',
     body: `The following additional terms apply if you access the Service through an application obtained from the Apple App Store ("iOS App"):
 
-**14.1 Acknowledgement.** These Terms are concluded between you and TradeFlow Studio only, and not with Apple Inc. ("Apple"). Apple is not responsible for the iOS App or its content.
+**14.1 Acknowledgement.** These Terms are concluded between you and TradeFlow Journal only, and not with Apple Inc. ("Apple"). Apple is not responsible for the iOS App or its content.
 
 **14.2 Scope of Licence.** The licence granted for the iOS App is limited to a non-transferable licence to use it on any Apple-branded device you own or control, as permitted by the Apple Media Services Terms and Conditions.
 
-**14.3 Maintenance and Support.** Apple has absolutely no obligation to furnish any maintenance or support services for the iOS App. All maintenance and support is the sole responsibility of TradeFlow Studio.
+**14.3 Maintenance and Support.** Apple has absolutely no obligation to furnish any maintenance or support services for the iOS App. All maintenance and support is the sole responsibility of TradeFlow Journal.
 
 **14.4 Warranty.** In the event of any failure of the iOS App to conform to any applicable warranty, you may notify Apple, and Apple will refund the purchase price (if any) to you. To the maximum extent permitted by law, Apple will have no other warranty obligation with respect to the iOS App.
 
-**14.5 Product Claims.** TradeFlow Studio, not Apple, is responsible for addressing any claims relating to the iOS App, including product liability claims, failure to conform to legal requirements, and consumer protection claims.
+**14.5 Product Claims.** TradeFlow Journal, not Apple, is responsible for addressing any claims relating to the iOS App, including product liability claims, failure to conform to legal requirements, and consumer protection claims.
 
-**14.6 Third-Party IP.** In the event of a third-party intellectual property infringement claim related to the iOS App, TradeFlow Studio — not Apple — will be solely responsible for the investigation, defence, settlement, and discharge of that claim.
+**14.6 Third-Party IP.** In the event of a third-party intellectual property infringement claim related to the iOS App, TradeFlow Journal — not Apple — will be solely responsible for the investigation, defence, settlement, and discharge of that claim.
 
 **14.7 Third-Party Beneficiary.** Apple and Apple's subsidiaries are third-party beneficiaries of these Terms as they relate to the iOS App. Upon your acceptance, Apple will have the right to enforce these Terms as a third-party beneficiary.
 
@@ -341,15 +341,15 @@ This obligation survives termination of these Terms.`
 
 **15.2 Jurisdiction.** You irrevocably agree that the courts of **Ontario, Canada** shall have exclusive jurisdiction to settle any dispute or claim arising out of or in connection with these Terms or the Service.
 
-**15.3 Informal Resolution.** Before initiating any formal proceedings, you agree to first attempt to resolve the dispute informally by contacting legal@tradeflowstudio.com. We will try to resolve within 30 days.
+**15.3 Informal Resolution.** Before initiating any formal proceedings, you agree to first attempt to resolve the dispute informally by contacting legal@tradeflowjournal.com. We will try to resolve within 30 days.
 
-**15.4 Class Action Waiver.** To the extent permitted by applicable law, you waive any right to participate in a class action lawsuit or class-wide arbitration against TradeFlow Studio.
+**15.4 Class Action Waiver.** To the extent permitted by applicable law, you waive any right to participate in a class action lawsuit or class-wide arbitration against TradeFlow Journal.
 
 **15.5 Limitation Period.** Any claim must be filed within **one (1) year** after the cause of action accrued, or be permanently barred.`
   },
   {
     heading: '16. General Provisions',
-    body: `**16.1 Entire Agreement.** These Terms together with our Privacy Policy constitute the entire agreement between you and TradeFlow Studio and supersede all prior agreements.
+    body: `**16.1 Entire Agreement.** These Terms together with our Privacy Policy constitute the entire agreement between you and TradeFlow Journal and supersede all prior agreements.
 
 **16.2 Severability.** If any provision is found unlawful or unenforceable, it shall be severed; the remaining provisions continue in full force.
 
@@ -357,7 +357,7 @@ This obligation survives termination of these Terms.`
 
 **16.4 Assignment.** You may not assign these Terms without our written consent. We may freely assign our rights (including in connection with a merger or acquisition).
 
-**16.5 Notices.** Legal notices to TradeFlow Studio must be sent to legal@tradeflowstudio.com. Notices to you will be sent to your registered email address.
+**16.5 Notices.** Legal notices to TradeFlow Journal must be sent to legal@tradeflowjournal.com. Notices to you will be sent to your registered email address.
 
 **16.6 Language.** In the event of conflict between any translated version and the English version, the English version prevails.`
   },
@@ -369,9 +369,9 @@ For non-material changes (clarifications, contact updates), we will update the "
   },
   {
     heading: '18. Contact',
-    body: `**Legal:** legal@tradeflowstudio.com
-**Support:** support@tradeflowstudio.com
-**Address:** TradeFlow Studio, Ontario, Canada`
+    body: `**Legal:** legal@tradeflowjournal.com
+**Support:** support@tradeflowjournal.com
+**Address:** TradeFlow Journal, Ontario, Canada`
   },
 ];
 
@@ -467,7 +467,7 @@ export const TermsAcceptanceGate: React.FC<TermsGateProps> = ({ onAccept, userNa
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
               <p className="text-[10px] font-black text-amber-700 uppercase tracking-wider mb-1">⚠️ Risk Warning</p>
-              <p className="text-[10px] text-amber-700/80 leading-relaxed">Trading is risky and the vast majority of traders lose money. TradeFlow Studio does not provide financial advice and is not responsible for any trading losses.</p>
+              <p className="text-[10px] text-amber-700/80 leading-relaxed">Trading is risky and the vast majority of traders lose money. TradeFlow Journal does not provide financial advice and is not responsible for any trading losses.</p>
             </div>
             <div className="space-y-3 mb-7">
               {([
@@ -498,7 +498,7 @@ export const TermsAcceptanceGate: React.FC<TermsGateProps> = ({ onAccept, userNa
                 <button type="button" onClick={(e) => { e.stopPropagation(); setOpenDoc('terms'); }} className="text-black font-black underline decoration-black/30 hover:decoration-black transition-all">Terms & Conditions</button>
                 {' '}and{' '}
                 <button type="button" onClick={(e) => { e.stopPropagation(); setOpenDoc('privacy'); }} className="text-black font-black underline decoration-black/30 hover:decoration-black transition-all">Privacy Policy</button>.
-                {' '}I understand that trading involves substantial risk and TradeFlow Studio does not provide financial advice.
+                {' '}I understand that trading involves substantial risk and TradeFlow Journal does not provide financial advice.
               </span>
             </label>
             <button

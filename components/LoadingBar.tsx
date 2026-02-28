@@ -69,7 +69,8 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({ message = 'Loading...' }
             className="h-full bg-black rounded-full"
             style={{
               width: `${progress}%`,
-              transition: 'width 80ms linear',
+              // ✅ FIX: Removed transition - requestAnimationFrame provides smooth animation
+              // transition causes jitter when progress updates frequently
             }}
           />
         </div>

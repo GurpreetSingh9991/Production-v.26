@@ -35,9 +35,10 @@ interface TradeFormProps {
   initialData?: Trade | null;
   accounts: Account[];
   activeAccountId: string;
+  prefillDate?: string;
 }
 
-const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, accounts, activeAccountId }) => {
+const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, accounts, activeAccountId, prefillDate }) => {
   const [showMistakes, setShowMistakes] = useState(false);
   const [showPsychology, setShowPsychology] = useState(false);
   const [isAdvanced, setIsAdvanced] = useState(false);
@@ -57,7 +58,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
     id: generateUUID(),
     accountId: activeAccountId,
     timestamp: new Date().toISOString(),
-    date: new Date().toISOString().split('T')[0],
+    date: prefillDate || new Date().toISOString().split('T')[0],
     symbol: '',
     side: 'LONG',
     assetType: 'STOCKS',
@@ -452,12 +453,23 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
             <h3 className="text-[10px] font-black text-black/60 uppercase tracking-[0.3em] flex items-center gap-2">
               <div className="w-1 h-3 bg-black/40 rounded-full" /> Session Context
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
               <div className="space-y-1.5">
                 <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Account</label>
                 <select name="accountId" value={formData.accountId} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-black outline-none h-[48px] focus:ring-2 focus:ring-black/5 text-black">
                   {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                 </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Trade Date</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date || ''}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={handleChange}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-black outline-none h-[48px] focus:ring-2 focus:ring-black/5 text-black"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">HTF Bias</label>

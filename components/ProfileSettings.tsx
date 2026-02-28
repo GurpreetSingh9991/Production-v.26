@@ -134,7 +134,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
       if (portalError) throw new Error(portalError);
       if (url) window.location.href = url;
     } catch (err: any) {
-      setError(err.message || 'Could not open cancellation portal. Please contact support@tradeflowstudio.com');
+      setError(err.message || 'Could not open cancellation portal. Please contact support@tradeflowjournal.com');
     } finally {
       setIsCancelling(false);
       setShowCancelConfirm(false);
@@ -199,7 +199,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h4 className={`text-xl font-black tracking-tight flex items-center gap-2 ${plan === 'pro' ? 'text-white' : 'text-black'}`}>
-                    {plan === 'pro' ? 'Studio Pro' : 'Free Terminal'}
+                    {plan === 'pro' ? 'Journal Pro' : 'Free Terminal'}
                     {plan === 'pro' && <ICONS.Zap className="w-5 h-5 text-emerald-400" />}
                   </h4>
                   <p className={`text-[9px] font-bold uppercase tracking-widest mt-1 ${plan === 'pro' ? 'text-white/40' : 'text-black/30'}`}>
@@ -397,7 +397,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onClose, plan = 'free
           {/* Footer Info */}
           <div className="flex items-center justify-between text-[8px] font-black text-black opacity-20 uppercase tracking-[0.3em] pt-4">
             <span>Identity Protocol SEC-7</span>
-            <span>Studio Build v1.08</span>
+            <span>Journal Build v1.08</span>
           </div>
         </div>
 

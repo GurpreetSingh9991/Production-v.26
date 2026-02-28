@@ -213,7 +213,9 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     // ✅ FIX: Calculate totals based on display unit
     const totalNetPnL = displayUnit === 'R_MULTIPLE'
       ? currentTrades.reduce((sum, t) => sum + (t.rr || 0), 0)  // Sum of R values
-      : currentTrades.reduce((sum, t) => sum + t.pnl, 0);        // Sum of $ values
+      : displayUnit === 'TICKS'
+        ? currentTrades.reduce((sum, t) => sum + formatValue(t.pnl, t), 0)  // Sum of ticks per trade
+        : currentTrades.reduce((sum, t) => sum + t.pnl, 0);        // Sum of $ values
     
     const avgPnL = totalNetPnL / currentTrades.length;
     const winRate = currentTrades.length ? (winTrades.length / currentTrades.length) * 100 : 0;
@@ -237,7 +239,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
       if (dd > maxDrawdown) maxDrawdown = dd;
     });
 
-    const maxDrawdownPct = peak > 0 ? (maxDrawdown / peak) * 100 : 0;
+    // For TICKS/R_MULTIPLE, peak can be 0 if no winning trades came first — use abs peak or raw value
+    const maxDrawdownPct = peak > 0 ? (maxDrawdown / peak) * 100 : (maxDrawdown > 0 ? 100 : 0);
 
     let streakCount = 0, streakType: 'WIN' | 'LOSS' | null = null;
     for (let i = sortedTrades.length - 1; i >= 0; i--) {
@@ -339,8 +342,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
       wins: winTrades.length, 
       losses: lossTrades.length, 
       winRate, 
-      totalNetPnL: formatValue(totalNetPnL), 
-      avgPnL: formatValue(avgPnL), 
+      totalNetPnL: displayUnit === 'TICKS' ? totalNetPnL : formatValue(totalNetPnL), 
+      avgPnL: displayUnit === 'TICKS' ? avgPnL : formatValue(avgPnL), 
       avgWin,
       avgLoss,
       profitFactor,
@@ -351,6 +354,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
       streakCount, 
       streakType,
       maxDrawdownPct,
+      maxDrawdownRaw: maxDrawdown,
       disciplineScore,
       unitLabel: getUnitLabel(),
       activeAlerts: activeAlerts.sort((a, b) => b.priority - a.priority).slice(0, 3)
@@ -561,7 +565,13 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
             <KPIBox
               tier={3}
               label="Max Drawdown"
-              value={`${stats.maxDrawdownPct.toFixed(1)}%`}
+              value={
+                displayUnit === 'TICKS'
+                  ? `${stats.maxDrawdownRaw.toFixed(1)} Tks`
+                  : displayUnit === 'R_MULTIPLE'
+                    ? `${stats.maxDrawdownRaw.toFixed(2)}R`
+                    : `${stats.maxDrawdownPct.toFixed(1)}%`
+              }
               subtext="Peak to Trough"
               color={stats.maxDrawdownPct > 15 ? 'rose' : stats.maxDrawdownPct > 10 ? 'amber' : 'emerald'}
               pill={stats.maxDrawdownPct > 15 ? 'DD' : undefined}

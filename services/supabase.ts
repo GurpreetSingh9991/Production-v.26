@@ -43,9 +43,18 @@ export const clearAuthSession = () => {
 export const getSupabaseAccounts = async (): Promise<Account[] | null> => {
   const client = getSupabaseClient();
   if (!client) return null;
+  
+  // ✅ FIX: Get current user to filter accounts
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    console.warn('No authenticated user for getSupabaseAccounts');
+    throw new Error('AUTH_ERROR');
+  }
+  
   const { data, error } = await client
     .from('accounts')
     .select('*')
+    .eq('user_id', user.id)  // ✅ CRITICAL: Only fetch user's own accounts
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -257,9 +266,22 @@ const mapToDb = (trade: Trade, userId: string) => ({
 export const getSupabaseTrades = async (): Promise<Trade[] | null> => {
   const client = getSupabaseClient();
   if (!client) return null;
+  
+  // ✅ FIX: Get current user to filter trades
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    console.warn('No authenticated user for getSupabaseTrades');
+    throw new Error('AUTH_ERROR');
+  }
+  
+  console.log('📊 Fetching trades for user:', user.id);
+  
+  // ✅ FIX: Filter by user_id to only get THIS user's trades
   const { data, error } = await client
     .from('trades')
     .select('*')
+    .eq('user_id', user.id)  // ✅ CRITICAL: Only fetch user's own trades
+    .is('deleted_at', null)   // ✅ Exclude soft-deleted trades
     .order('date', { ascending: false });
 
   if (error) {
@@ -269,6 +291,8 @@ export const getSupabaseTrades = async (): Promise<Trade[] | null> => {
     console.error("Supabase Fetch Error:", error.message);
     return null;
   }
+  
+  console.log(`✅ Fetched ${data?.length || 0} trades`);
   return (data || []).map(mapFromDb);
 };
 

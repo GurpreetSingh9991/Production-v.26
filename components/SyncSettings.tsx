@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SyncConfig, PerformanceUnit } from '../types';
 import { ICONS as UI_ICONS } from '../constants';
 import { SupabaseConfig, deleteUserAccountData } from '../services/supabase';
+import { LegalModal } from './Legal';
+type LegalDoc = 'privacy' | 'terms';
 
 interface SyncSettingsProps {
   config: SyncConfig;
@@ -38,6 +40,7 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
 }) => {
   const [url, setUrl] = useState(config.sheetUrl);
   const [localUnit, setLocalUnit] = useState<PerformanceUnit>(displayUnit);
+  const [openLegal, setOpenLegal] = useState<LegalDoc | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [wipeConfirm, setWipeConfirm] = useState('');
   const [saveStatus, setSaveStatus] = useState<'IDLE' | 'SAVED'>('IDLE');
@@ -101,6 +104,7 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
   ];
 
   return (
+    <>
     <div className="flex flex-col h-full bg-[#EFEFEF] animate-in fade-in duration-500 font-sans relative">
       
       {/* 3-Zone Fixed Glass Header (Mobile Specific) - z-index: 100 */}
@@ -298,20 +302,20 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
                 <SettingRow 
                   icon={<UI_ICONS.Mail className="w-4 h-4" />} 
                   label="Email Support" 
-                  description="support@tradeflowstudio.com"
-                  onClick={() => window.location.href = 'mailto:support@tradeflowstudio.com'}
+                  description="support@tradeflowjournal.com"
+                  onClick={() => window.location.href = 'mailto:support@tradeflowjournal.com'}
                 />
                 <SettingRow 
                   icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>} 
                   label="Privacy Policy" 
                   description="VIEW OUR DATA & PRIVACY TERMS"
-                  onClick={() => window.open('mailto:support@tradeflowstudio.com?subject=Privacy%20Policy%20Request', '_blank')}
+                  onClick={() => setOpenLegal('privacy')}
                 />
                 <SettingRow 
                   icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>} 
                   label="Terms of Service" 
                   description="VIEW TERMS & CONDITIONS"
-                  onClick={() => window.open('mailto:support@tradeflowstudio.com?subject=Terms%20of%20Service%20Request', '_blank')}
+                  onClick={() => setOpenLegal('terms')}
                   isLast={true}
                 />
               </div>
@@ -366,6 +370,8 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
         </div>
       </div>
     </div>
+    {openLegal && <LegalModal doc={openLegal} onClose={() => setOpenLegal(null)} />}
+    </>
   );
 };
 
