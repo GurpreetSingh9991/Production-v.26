@@ -100,7 +100,6 @@ const SyncSettings: React.FC<SyncSettingsProps> = ({
     { unit: 'CURRENCY', label: 'Cash' },
     { unit: 'PERCENT', label: 'Return' },
     { unit: 'R_MULTIPLE', label: 'Risk' },
-    { unit: 'TICKS', label: 'Price' },
   ];
 
   return (

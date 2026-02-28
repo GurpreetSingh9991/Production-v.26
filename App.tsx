@@ -16,12 +16,18 @@ import ProfileSettings from './components/ProfileSettings';
 import AccountManager from './components/AccountManager';
 import Auth from './components/Auth';
 import LoadingBar from './components/LoadingBar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { TermsAcceptanceGate } from './components/Legal';
 import { Session } from '@supabase/supabase-js';
 
 // ─── Toast System ─────────────────────────────────────────────────────────────
 interface Toast { id: number; message: string; type: 'success' | 'error' | 'info' | 'warn'; }
 let toastIdCounter = 0;
+
+// ─── Haptic Feedback ─────────────────────────────────────────────────────────
+const haptic = (pattern: number | number[] = 8) => {
+  try { if ('vibrate' in navigator) navigator.vibrate(pattern); } catch {}
+};
 
 const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: number) => void }> = ({ toasts, onRemove }) => (
   <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none" style={{ maxWidth: '320px' }}>
@@ -206,7 +212,7 @@ const DrawerNavItem: React.FC<{
 }> = ({ icon, label, isActive, locked, amber, onClick }) => (
   <button
     onClick={onClick}
-    className="w-full flex items-center gap-3 px-3 py-[10px] rounded-xl text-left text-[13.5px] tracking-tight transition-all active:scale-[0.97] select-none"
+    className="w-full flex items-center gap-3 px-3 py-[10px] rounded-xl text-left text-[13px] tracking-tight font-sans transition-all active:scale-[0.97] select-none"
     style={isActive
       ? { background: 'rgba(255,255,255,0.10)', color: 'white', fontWeight: 700 }
       : { color: locked ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.55)', fontWeight: 500 }
@@ -240,6 +246,8 @@ const App: React.FC = () => {
   const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
+  const [swipeStartY, setSwipeStartY] = useState<number | null>(null);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [prefillDate, setPrefillDate] = useState<string | undefined>(undefined);
   const [upgradePrompt, setUpgradePrompt] = useState<string | null>(null);
@@ -248,6 +256,35 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+
+  const openDrawer = () => { haptic(6); setIsMobileDrawerOpen(true); };
+  const closeDrawer = () => { haptic(4); setIsMobileDrawerOpen(false); };
+
+  // Swipe edge handler — fire after touch ends
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    // Only capture swipes starting within 28px of left edge
+    if (t.clientX <= 28) {
+      setSwipeStartX(t.clientX);
+      setSwipeStartY(t.clientY);
+    } else {
+      setSwipeStartX(null);
+      setSwipeStartY(null);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (swipeStartX === null || swipeStartY === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - swipeStartX;
+    const dy = Math.abs(t.clientY - swipeStartY);
+    // Horizontal swipe > 55px, vertical drift < 60px, only when drawer is closed
+    if (dx > 55 && dy < 60 && !isMobileDrawerOpen) {
+      openDrawer();
+    }
+    setSwipeStartX(null);
+    setSwipeStartY(null);
+  };
 
   const randomQuote = useMemo(() => TRADER_QUOTES[Math.floor(Math.random() * TRADER_QUOTES.length)], []);
   const filteredTrades = useMemo(() => activeAccountId === 'ALL' ? trades : trades.filter(t => t.accountId === activeAccountId), [trades, activeAccountId]);
@@ -452,6 +489,7 @@ const App: React.FC = () => {
   };
 
   return (
+    <ErrorBoundary>
     <div
       className="flex min-h-[100dvh] h-[100dvh] bg-[#D6D6D6] text-black overflow-hidden font-sans selection:bg-black/10"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
@@ -552,7 +590,7 @@ const App: React.FC = () => {
       </aside>
 
       {/* ══ MAIN CONTENT ═══════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col apple-glass lg:ambient-shadow overflow-hidden relative border-none z-[1] lg:ml-[calc(4rem+280px+16px)] lg:mr-4 lg:mt-4 lg:mb-4 lg:h-[calc(100dvh-32px)]">
+      <div className="flex-1 flex flex-col apple-glass lg:ambient-shadow overflow-hidden relative border-none z-[1] lg:ml-[calc(4rem+280px+16px)] lg:mr-4 lg:mt-4 lg:mb-4 lg:h-[calc(100dvh-32px)]" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
 
         {/* ── Page Header ─────────────────────────────────────────────────────── */}
         {activeView !== 'SETTINGS' && (
@@ -572,7 +610,7 @@ const App: React.FC = () => {
               <div className="flex lg:hidden items-center gap-2.5 min-w-0">
                 {/* Clean hamburger — no boxy background, just a tap target */}
                 <button
-                  onClick={() => setIsMobileDrawerOpen(true)}
+                  onClick={openDrawer}
                   className="flex items-center justify-center transition-all active:scale-90 shrink-0"
                   style={{
                     width: 38,
@@ -647,7 +685,7 @@ const App: React.FC = () => {
                   {userPlan === 'pro' && <div className="mt-8 pt-8 border-t border-black/5 text-center flex flex-col items-center gap-2 opacity-40"><ICONS.Zap className="w-4 h-4 text-emerald-600" /><p className="text-[9px] font-black uppercase tracking-[0.3em]">Pro Access Active • Infinite Ops</p></div>}
                 </>
               )}
-              {activeView === 'TRADES_LOG' && <TradeLog displayUnit={displayUnit} trades={filteredTrades} onEdit={(t) => openTradeForm(t)} onDelete={handleDeleteTrade} />}
+              {activeView === 'TRADES_LOG' && <TradeLog displayUnit={displayUnit} trades={filteredTrades} onEdit={(t) => openTradeForm(t)} onDelete={handleDeleteTrade} startingEquity={startingEquity} />}
               {activeView === 'CALENDAR' && (
                 <Calendar
                   trades={filteredTrades} displayUnit={displayUnit} startingEquity={startingEquity}
@@ -717,7 +755,7 @@ const App: React.FC = () => {
             <div
               className="fixed inset-0 z-[95] animate-in fade-in duration-200"
               style={{ background: 'rgba(0,0,0,0.42)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
-              onClick={() => setIsMobileDrawerOpen(false)}
+              onClick={closeDrawer}
             />
           )}
 
@@ -726,10 +764,10 @@ const App: React.FC = () => {
             className={`fixed top-0 left-0 bottom-0 z-[96] w-[286px] flex flex-col transform transition-transform duration-300 ease-out ${isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
             style={{
               // ✅ Deep Apple-style dark glass — rich, layered, not flat black
-              background: 'linear-gradient(175deg, rgba(22,22,28,0.97) 0%, rgba(13,13,17,0.99) 100%)',
-              backdropFilter: 'blur(64px) saturate(220%)',
-              WebkitBackdropFilter: 'blur(64px) saturate(220%)',
-              borderRight: '1px solid rgba(255,255,255,0.055)',
+              background: 'linear-gradient(175deg, rgba(18,18,26,0.88) 0%, rgba(12,12,18,0.94) 100%)',
+              backdropFilter: 'blur(80px) saturate(250%)',
+              WebkitBackdropFilter: 'blur(80px) saturate(250%)',
+              borderRight: '1px solid rgba(255,255,255,0.10)',
               // ✅ FIX: Only apply shadow when open — when closed the 10px 0 60px shadow bleeds onto the screen edge
               boxShadow: isMobileDrawerOpen ? '10px 0 60px rgba(0,0,0,0.65), inset -1px 0 0 rgba(255,255,255,0.035)' : 'none',
             }}
@@ -775,7 +813,7 @@ const App: React.FC = () => {
                   background: 'rgba(255,255,255,0.055)',
                   border: '1px solid rgba(255,255,255,0.068)',
                 }}
-                onClick={() => { setIsMobileProfileSheetOpen(true); setIsMobileDrawerOpen(false); }}
+                onClick={() => { haptic(6); setIsMobileProfileSheetOpen(true); closeDrawer(); }}
               >
                 <img
                   src={session?.user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${userName}`}
@@ -787,12 +825,22 @@ const App: React.FC = () => {
                   <p className="text-[13px] font-bold truncate leading-snug" style={{ color: 'rgba(255,255,255,0.90)' }}>{userName}</p>
                   <div className="flex items-center gap-2 mt-[3px]">
                     {userPlan === 'pro'
-                      ? <span className="text-[10px] font-black leading-none" style={{ color: '#fbbf24' }}>⭐ Pro Member</span>
+                      ? (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center',
+                          padding: '2px 8px', borderRadius: 999,
+                          background: 'linear-gradient(135deg, rgba(251,191,36,0.18) 0%, rgba(245,158,11,0.12) 100%)',
+                          border: '1px solid rgba(251,191,36,0.35)',
+                          color: '#f59e0b',
+                          fontSize: 9, fontWeight: 900, letterSpacing: '0.15em',
+                          textTransform: 'uppercase',
+                        }}>PRO</span>
+                      )
                       : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-[10px] font-bold leading-none" style={{ color: 'rgba(255,255,255,0.28)' }}>Free</span>
                           <button
-                            onClick={(e) => { e.stopPropagation(); startStripeCheckout(session?.user?.id || '', userName, userEmail); setIsMobileDrawerOpen(false); }}
+                            onClick={(e) => { e.stopPropagation(); haptic(6); startStripeCheckout(session?.user?.id || '', userName, userEmail); closeDrawer(); }}
                             className="text-[9px] px-[7px] py-[3px] rounded-[6px] font-black uppercase tracking-wide transition-all active:scale-95 leading-none"
                             style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}
                           >
@@ -831,8 +879,8 @@ const App: React.FC = () => {
                     isActive={activeView === view && !locked}
                     locked={locked}
                     onClick={() => {
-                      if (locked) { setUpgradePrompt('analytics'); setIsMobileDrawerOpen(false); return; }
-                      setActiveView(view); setIsMobileDrawerOpen(false);
+                      if (locked) { haptic([6,6]); setUpgradePrompt('analytics'); closeDrawer(); return; }
+                      haptic(6); setActiveView(view); closeDrawer();
                     }}
                   />
                 );
@@ -856,8 +904,8 @@ const App: React.FC = () => {
                     locked={locked}
                     amber
                     onClick={() => {
-                      if (locked) { setUpgradePrompt(prompt); setIsMobileDrawerOpen(false); return; }
-                      setActiveView(view); setIsMobileDrawerOpen(false);
+                      if (locked) { haptic([6,6]); setUpgradePrompt(prompt); closeDrawer(); return; }
+                      haptic(6); setActiveView(view); closeDrawer();
                     }}
                   />
                 );
@@ -870,13 +918,13 @@ const App: React.FC = () => {
               <DrawerNavItem
                 icon={<ICONS.Dollar className="w-[17px] h-[17px]" />}
                 label="Accounts"
-                onClick={() => { setIsAccountManagerOpen(true); setIsMobileDrawerOpen(false); }}
+                onClick={() => { haptic(6); setIsAccountManagerOpen(true); closeDrawer(); }}
               />
               <DrawerNavItem
                 icon={<ICONS.Settings className="w-[17px] h-[17px]" />}
                 label="Settings"
                 isActive={activeView === 'SETTINGS'}
-                onClick={() => { setActiveView('SETTINGS'); setIsMobileDrawerOpen(false); }}
+                onClick={() => { haptic(6); setActiveView('SETTINGS'); closeDrawer(); }}
               />
             </nav>
 
@@ -889,7 +937,7 @@ const App: React.FC = () => {
               }}
             >
               <button
-                onClick={() => { handleLogout(); setIsMobileDrawerOpen(false); }}
+                onClick={() => { haptic(8); handleLogout(); closeDrawer(); }}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-[13.5px] font-semibold tracking-tight transition-all active:scale-[0.97]"
                 style={{ color: 'rgba(252,100,120,0.78)' }}
               >
@@ -994,6 +1042,7 @@ const App: React.FC = () => {
         </div>
       )}
     </div>
+    </ErrorBoundary>
   );
 };
 

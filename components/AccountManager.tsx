@@ -41,7 +41,7 @@ const AccountManager: React.FC<AccountManagerProps> = ({ accounts, onSave, onClo
   };
 
   const handleConfirmDelete = async (id: string) => {
-    console.log("UI: Executing confirmed deletion for account ID:", id);
+    
     
     setIsDeletingId(id);
     setPendingDeleteId(null);
@@ -50,7 +50,7 @@ const AccountManager: React.FC<AccountManagerProps> = ({ accounts, onSave, onClo
       const result = await deleteSupabaseAccount(id);
       
       if (result.success && result.count > 0) {
-        console.log("UI: Account deleted successfully from server.");
+        
         const updated = editingAccounts.filter(a => a.id !== id);
         setEditingAccounts(updated);
         onSave(updated);

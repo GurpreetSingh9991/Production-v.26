@@ -8,13 +8,16 @@ interface CalendarProps {
   startingEquity: number;
   onTradeEdit: (trade: Trade) => void;
   onTradeDelete: (id: string) => void;
+  onAddTradeForDate: (date: string) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity, onTradeEdit, onTradeDelete }) => {
+const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity, onTradeEdit, onTradeDelete, onAddTradeForDate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // --- LOGIC ---
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const tradesByDate = useMemo(() => {
     return trades.reduce((acc, trade) => {
       acc[trade.date] = acc[trade.date] || [];
@@ -34,35 +37,26 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
 
   const monthStats = useMemo(() => {
     const totalPnL = monthTrades.reduce((s, t) => s + (Number(t.pnl) || 0), 0);
-    const winRate = monthTrades.length > 0 
-      ? (monthTrades.filter(t => t.pnl > 0).length / monthTrades.length) * 100 
+    const winRate = monthTrades.length > 0
+      ? (monthTrades.filter(t => t.pnl > 0).length / monthTrades.length) * 100
       : 0;
-
     const dailyPnLs = monthTrades.reduce((acc, t) => {
       acc[t.date] = (acc[t.date] || 0) + (Number(t.pnl) || 0);
       return acc;
     }, {} as Record<string, number>);
-
-    // Fix: Cast Object.entries result to resolve arithmetic operation type errors
-    const sortedDays = (Object.entries(dailyPnLs) as [string, number][]).sort((a, b) => b[1] - a[1]);
-    const bestDay = sortedDays[0] || null;
-    const worstDay = sortedDays[sortedDays.length - 1] || null;
-
-    // Fix: Cast Object.values result to number[] to resolve comparison operator error with unknown types
     const winningDays = (Object.values(dailyPnLs) as number[]).filter(p => p > 0).length;
     const activeDays = Object.keys(dailyPnLs).length;
-
-    return { totalPnL, winRate, bestDay, worstDay, winningDays, activeDays };
+    return { totalPnL, winRate, winningDays, activeDays };
   }, [monthTrades]);
 
   const formatValue = (val: number) => {
-    if (displayUnit === 'PERCENT') return `${((val / startingEquity) * 100).toFixed(2)}%`;
+    if (displayUnit === 'PERCENT' && startingEquity > 0)
+      return `${((val / startingEquity) * 100).toFixed(2)}%`;
     return `$${Math.round(val).toLocaleString()}`;
   };
 
-  // --- CALENDAR HELPERS ---
-  const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+  const daysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
+  const firstDayOfMonth = (y: number, m: number) => new Date(y, m, 1).getDay();
 
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -76,35 +70,50 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
   const weeks = useMemo(() => {
     const calendarDays: (string | null)[] = [];
     for (let i = 0; i < startDay; i++) calendarDays.push(null);
-    for (let i = 1; i <= totalDays; i++) calendarDays.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+    for (let i = 1; i <= totalDays; i++)
+      calendarDays.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
     const res: (string | null)[][] = [];
     for (let i = 0; i < calendarDays.length; i += 7) res.push(calendarDays.slice(i, i + 7));
     if (res.length > 0) while (res[res.length - 1].length < 7) res[res.length - 1].push(null);
     return res;
   }, [year, month, totalDays, startDay]);
 
+  const handleDeleteTrade = (id: string) => {
+    if (confirmDeleteId === id) {
+      onTradeDelete(id);
+      setConfirmDeleteId(null);
+    } else {
+      setConfirmDeleteId(id);
+      setTimeout(() => setConfirmDeleteId(null), 3000);
+    }
+  };
+
+  const isPastOrToday = (dateStr: string) => dateStr <= todayStr;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700 pb-10">
-      
-      {/* Month Navigation & Stats Header */}
+
+      {/* Month Navigation */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         <div className="flex-1 w-full apple-glass p-6 rounded-[2.5rem] border border-black/5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center bg-black/5 hover:bg-black/10 rounded-full transition-all border border-black/5">
+            <button onClick={handlePrevMonth} className="w-10 h-10 flex items-center justify-center bg-black/5 hover:bg-black/10 rounded-full transition-all active:scale-90">
               <ICONS.ToggleLeft className="w-5 h-5 text-black/60" />
             </button>
-            <div className="text-center min-w-[140px]">
-              <h2 className="text-xl font-black tracking-tighter uppercase leading-none">{monthName} {year}</h2>
+            <div className="text-center min-w-[160px]">
+              <h2 className="text-2xl font-black tracking-tighter uppercase leading-none">{monthName} {year}</h2>
               <p className="text-[9px] font-black text-black/20 uppercase tracking-[0.2em] mt-1">Operational Summary</p>
             </div>
-            <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center bg-black/5 hover:bg-black/10 rounded-full transition-all border border-black/5">
+            <button onClick={handleNextMonth} className="w-10 h-10 flex items-center justify-center bg-black/5 hover:bg-black/10 rounded-full transition-all active:scale-90">
               <ICONS.ToggleRight className="w-5 h-5 text-black/60" />
             </button>
           </div>
-          <button onClick={() => setCurrentDate(new Date())} className="px-6 py-3 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Go to Today</button>
+          <button onClick={() => { setCurrentDate(new Date()); setSelectedDate(todayStr); }} className="px-6 py-3 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+            Go to Today
+          </button>
         </div>
 
-        <div className="w-full lg:w-[320px] ceramic-white p-6 rounded-[2.5rem] border border-black/5 shadow-sm space-y-4">
+        <div className="w-full lg:w-[320px] apple-glass p-6 rounded-[2.5rem] border border-black/5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-[10px] font-black text-black/30 uppercase tracking-widest">Month Metrics</h4>
             <div className={`px-2 py-0.5 rounded-full text-[8px] font-black ${monthStats.totalPnL >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
@@ -114,9 +123,7 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-[8px] font-black text-black/20 uppercase tracking-widest">Net Yield</p>
-              <p className={`text-xl font-black ${monthStats.totalPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {formatValue(monthStats.totalPnL)}
-              </p>
+              <p className={`text-xl font-black ${monthStats.totalPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatValue(monthStats.totalPnL)}</p>
             </div>
             <div>
               <p className="text-[8px] font-black text-black/20 uppercase tracking-widest">Volume</p>
@@ -139,52 +146,75 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
 
       {/* Calendar Grid */}
       <div className="apple-glass p-4 md:p-8 rounded-[2.5rem] sm:rounded-[3.5rem] ios-shadow border-white/60 overflow-hidden">
-        <div className="grid grid-cols-7 gap-2 md:gap-4 mb-6">
-          {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
-            <div key={day} className="text-center text-[9px] font-black text-black/10 tracking-[0.3em]">{day}</div>
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-1.5 md:gap-3 mb-4 md:mb-6">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="text-center text-[9px] md:text-[11px] lg:text-xs font-black text-black/25 tracking-[0.12em] uppercase">{day}</div>
           ))}
         </div>
-        <div className="space-y-2 md:space-y-4">
+
+        {/* Weeks */}
+        <div className="space-y-1.5 md:space-y-2.5">
           {weeks.map((week, wIdx) => (
-            <div key={wIdx} className="grid grid-cols-7 gap-2 md:gap-4">
+            <div key={wIdx} className="grid grid-cols-7 gap-1.5 md:gap-2.5">
               {week.map((dateStr, dIdx) => {
-                if (!dateStr) return <div key={dIdx} className="aspect-square opacity-0"></div>;
-                
+                if (!dateStr) return <div key={dIdx} className="aspect-square opacity-0" />;
+
                 const dayTrades = tradesByDate[dateStr] || [];
                 const netPnL = dayTrades.reduce((s, t) => s + (Number(t.pnl) || 0), 0);
                 const isSelected = selectedDate === dateStr;
-                const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                const isToday = dateStr === todayStr;
+                const dayNum = parseInt(dateStr.split('-')[2]);
+                const hasTrades = dayTrades.length > 0;
 
                 return (
-                  <button 
-                    key={dateStr} 
+                  <button
+                    key={dateStr}
                     onClick={() => setSelectedDate(isSelected ? null : dateStr)}
-                    className={`relative aspect-square flex flex-col items-center justify-between rounded-2xl md:rounded-[2.2rem] transition-all duration-300 p-2 md:p-4 border ${
-                      isSelected 
-                        ? 'bg-black text-white shadow-2xl scale-105 z-10 border-black' 
-                        : isToday 
-                          ? 'bg-white border-black/40 shadow-md' 
-                          : 'bg-white/40 hover:bg-white border-white/10'
+                    className={`relative flex flex-col rounded-xl md:rounded-2xl lg:rounded-[1.4rem] transition-all duration-200 border group overflow-hidden ${
+                      isSelected
+                        ? 'bg-black shadow-2xl scale-[1.03] z-10 border-black'
+                        : isToday
+                          ? 'bg-white border-black/25 shadow-md'
+                          : hasTrades
+                            ? 'bg-white/70 hover:bg-white border-white/60 hover:shadow-sm'
+                            : 'bg-white/30 hover:bg-white/60 border-white/30'
                     }`}
+                    style={{ aspectRatio: '1', padding: 'clamp(6px, 1.5vw, 14px)' }}
                   >
-                    <div className="flex items-center justify-between w-full">
-                       <span className={`text-[10px] md:text-[14px] font-black ${isSelected ? 'text-white' : 'text-black/50'}`}>
-                         {parseInt(dateStr.split('-')[2])}
-                       </span>
-                       {dayTrades.length > 0 && !isSelected && (
-                         <div className="w-1.5 h-1.5 rounded-full bg-black/10" />
-                       )}
+                    {/* Date number */}
+                    <div className="flex items-start justify-between w-full">
+                      <span className={`font-black tabular-nums leading-none ${
+                        isSelected ? 'text-white' : isToday ? 'text-black' : 'text-black/55'
+                      }`} style={{ fontSize: 'clamp(10px, 2vw, 17px)' }}>
+                        {dayNum}
+                      </span>
+                      {/* Trade count dot / indicator */}
+                      {hasTrades && !isSelected && (
+                        <div className={`rounded-full shrink-0 ${netPnL >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                          style={{ width: 'clamp(4px, 0.8vw, 7px)', height: 'clamp(4px, 0.8vw, 7px)', marginTop: '2px' }} />
+                      )}
                     </div>
-                    
-                    {dayTrades.length > 0 && (
-                      <div className="w-full truncate text-center">
-                        <div className={`font-mono text-[8px] md:text-[11px] font-black ${isSelected ? 'text-white' : netPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {netPnL >= 0 ? '+' : '-'}${Math.abs(Math.floor(netPnL)).toLocaleString()}
+
+                    {/* P&L — shown only when there are trades */}
+                    {hasTrades && (
+                      <div className="w-full mt-auto">
+                        <div className={`font-black tabular-nums leading-none ${
+                          isSelected ? 'text-white' : netPnL >= 0 ? 'text-emerald-600' : 'text-rose-500'
+                        }`} style={{ fontSize: 'clamp(7px, 1.4vw, 12px)' }}>
+                          {netPnL >= 0 ? '+' : '−'}${Math.abs(Math.floor(netPnL)).toLocaleString()}
                         </div>
-                        <div className={`text-[6px] md:text-[7px] font-black uppercase tracking-widest mt-0.5 ${isSelected ? 'text-white/40' : 'text-black/20'}`}>
-                          {dayTrades.length} Trades
+                        <div className={`font-bold leading-none mt-px hidden md:block ${
+                          isSelected ? 'text-white/35' : 'text-black/20'
+                        }`} style={{ fontSize: 'clamp(5px, 0.8vw, 8px)' }}>
+                          {dayTrades.length} {dayTrades.length === 1 ? 'trade' : 'trades'}
                         </div>
                       </div>
+                    )}
+
+                    {/* Today ring */}
+                    {isToday && !isSelected && (
+                      <div className="absolute inset-0 rounded-xl md:rounded-2xl lg:rounded-[1.4rem] ring-1.5 ring-black/20 pointer-events-none" />
                     )}
                   </button>
                 );
@@ -196,46 +226,105 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
 
       {/* Selected Day Drill-down */}
       {selectedDate && (
-        <div className="apple-glass p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[3.5rem] animate-reagle ios-shadow border-none space-y-8">
-          <div className="flex items-center justify-between border-b border-black/5 pb-6">
-             <div>
-                <h3 className="text-sm font-black uppercase tracking-[0.2em]">
-                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                </h3>
-                <p className="text-[10px] font-bold text-black/20 uppercase tracking-widest mt-1">Execution Drill-down</p>
-             </div>
-             <button onClick={() => setSelectedDate(null)} className="w-10 h-10 flex items-center justify-center hover:bg-black/5 rounded-full transition-colors text-black opacity-40">
-               <ICONS.Close className="w-6 h-6" />
-             </button>
+        <div className="apple-glass p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] ios-shadow border-none space-y-6 animate-in slide-in-from-bottom-3 duration-300">
+          <div className="flex items-start justify-between border-b border-black/5 pb-5">
+            <div>
+              <h3 className="text-base font-black uppercase tracking-[0.12em] text-black leading-tight">
+                {new Date(selectedDate + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </h3>
+              <p className="text-[9px] font-bold text-black/25 uppercase tracking-widest mt-1.5">
+                {(tradesByDate[selectedDate]?.length || 0)} {(tradesByDate[selectedDate]?.length || 0) === 1 ? 'trade' : 'trades'} recorded
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {isPastOrToday(selectedDate) && (
+                <button
+                  onClick={() => { onAddTradeForDate(selectedDate); setSelectedDate(null); }}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-black text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                >
+                  <ICONS.Plus className="w-3 h-3" />
+                  Log Trade
+                </button>
+              )}
+              <button onClick={() => setSelectedDate(null)} className="w-9 h-9 flex items-center justify-center hover:bg-black/5 rounded-full transition-colors text-black/25 hover:text-black active:scale-90">
+                <ICONS.Close className="w-4.5 h-4.5" />
+              </button>
+            </div>
           </div>
-          
-          <div className="space-y-4">
+
+          <div className="space-y-2.5">
             {tradesByDate[selectedDate]?.map(trade => (
-              <div key={trade.id} className="bg-white/40 border border-white/60 rounded-[2rem] p-5 hover:shadow-lg transition-all flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-[10px] ${trade.side === 'LONG' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
-                      {trade.side[0]}
-                   </div>
-                   <div>
-                      <h4 className="text-sm font-black tracking-tight">{trade.symbol}</h4>
-                      <p className="text-[9px] font-bold text-black/20 uppercase tracking-widest">{trade.setupType} Variant</p>
-                   </div>
-                </div>
-                <div className="flex items-center gap-6">
-                   <div className="text-right">
-                      <p className={`text-sm font-black font-mono ${trade.pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                         {trade.pnl >= 0 ? '+' : '-'}${Math.abs(trade.pnl).toLocaleString()}
+              <div key={trade.id} className="bg-white/60 border border-white/80 rounded-2xl p-4 sm:p-5 hover:shadow-md transition-all">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-[10px] shrink-0 ${trade.side === 'LONG' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                      {trade.side === 'LONG' ? 'L' : 'S'}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-black tracking-tight text-black">{trade.symbol}</h4>
+                        <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wide shrink-0 ${
+                          trade.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-600'
+                          : trade.result === 'LOSS' ? 'bg-rose-500/10 text-rose-600'
+                          : 'bg-black/5 text-black/40'
+                        }`}>{trade.result}</span>
+                      </div>
+                      <p className="text-[9px] font-bold text-black/25 uppercase tracking-widest mt-0.5 truncate">
+                        {trade.setupType} · {trade.entryTime}–{trade.exitTime}
                       </p>
-                      <p className="text-[9px] font-bold text-black/20 uppercase tracking-widest">{trade.rr}R Yield</p>
-                   </div>
-                   <button onClick={() => onTradeEdit(trade)} className="text-black/20 hover:text-black transition-colors"><ICONS.Edit className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right">
+                      <p className={`text-sm font-black font-mono ${trade.pnl >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        {trade.pnl >= 0 ? '+' : '−'}${Math.abs(trade.pnl).toLocaleString()}
+                      </p>
+                      <p className="text-[8px] font-bold text-black/20 uppercase tracking-widest">{trade.rr}R</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => onTradeEdit(trade)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-black/5 hover:bg-black hover:text-white text-black/30 transition-all active:scale-90">
+                        <ICONS.Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTrade(trade.id)}
+                        className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all active:scale-90 ${
+                          confirmDeleteId === trade.id
+                            ? 'bg-rose-500 text-white'
+                            : 'bg-black/5 hover:bg-rose-500/10 text-black/30 hover:text-rose-500'
+                        }`}
+                        title={confirmDeleteId === trade.id ? 'Tap again to confirm' : 'Delete'}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
+
             {(!tradesByDate[selectedDate] || tradesByDate[selectedDate].length === 0) && (
-              <div className="text-center py-20 opacity-20 flex flex-col items-center gap-4">
-                 <ICONS.Journal className="w-12 h-12" />
-                 <p className="text-[10px] font-black uppercase tracking-[0.3em]">No Recorded Activity</p>
+              <div className="text-center py-14 flex flex-col items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-black/[0.04] flex items-center justify-center">
+                  <ICONS.Journal className="w-7 h-7 text-black/12" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-black/25 uppercase tracking-widest">No Trades Recorded</p>
+                  <p className="text-[10px] font-bold text-black/15 mt-1">
+                    {isPastOrToday(selectedDate) ? 'Forgot to log one?' : 'This date is in the future'}
+                  </p>
+                </div>
+                {isPastOrToday(selectedDate) && (
+                  <button
+                    onClick={() => { onAddTradeForDate(selectedDate); setSelectedDate(null); }}
+                    className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                  >
+                    <ICONS.Plus className="w-3.5 h-3.5" />
+                    Log a Trade for This Day
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -19,6 +19,10 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [openLegal, setOpenLegal] = useState<LegalDoc | null>(null);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const client = getSupabaseClient();
 
@@ -32,6 +36,23 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
     } catch (err: any) {
       setError(err.message || 'Google authentication failed.');
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail.trim()) return;
+    setResetLoading(true);
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase!.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: window.location.origin,
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email.');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -133,7 +154,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
           <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center mb-4 shadow-xl">
              <ICONS.Logo className="w-8 h-8 text-white" />
           </div>
-          <span className="text-black/30 font-black tracking-[0.4em] text-[9px] uppercase">TradeFlow Studio</span>
+          <span className="text-black/30 font-black tracking-[0.4em] text-[9px] uppercase">TradeFlow Journal</span>
         </div>
 
         <div className="text-center mb-8">
@@ -187,6 +208,19 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
               required
             />
           </div>
+
+          {/* Forgot password link */}
+          {isLogin && (
+            <div className="text-right -mt-1">
+              <button
+                type="button"
+                onClick={() => { setIsForgotPassword(true); setResetEmail(email); setResetSent(false); setError(null); }}
+                className="text-[9px] font-black uppercase tracking-widest text-black/30 hover:text-black transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           {error && (
             <div className="bg-rose-500/10 border border-rose-500/20 py-2.5 px-6 rounded-xl text-center">
@@ -259,7 +293,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
 
         <div className="mt-10 pt-6 border-t border-black/5 text-center">
           <p className="text-[8px] text-black/30 font-semibold leading-relaxed max-w-xs mx-auto">
-            ⚠️ Trading is risky and 99.9% of people lose money. This is not financial advice — do not risk money you cannot afford to lose. TradeFlow Studio is not responsible for any trading losses.
+            ⚠️ Trading is risky and 99.9% of people lose money. This is not financial advice — do not risk money you cannot afford to lose. TradeFlow Journal is not responsible for any trading losses.
           </p>
           <p className="text-[7px] text-black/15 font-bold mt-2 uppercase tracking-widest">
             By continuing you agree to our{' '}
@@ -269,6 +303,49 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
           </p>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {isForgotPassword && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(12px)' }}>
+          <div className="w-full max-w-sm apple-glass rounded-[2.5rem] p-8 animate-in zoom-in-95 duration-300 border border-white/40 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-black tracking-tight text-black uppercase">Reset Password</h3>
+              <button onClick={() => { setIsForgotPassword(false); setResetSent(false); setError(null); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 text-black/40 transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            {resetSent ? (
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <p className="text-sm font-black text-black">Reset link sent!</p>
+                <p className="text-[10px] font-bold text-black/40 leading-relaxed">Check <strong className="text-black">{resetEmail}</strong> for a password reset link. Check your spam folder if you don't see it.</p>
+                <button onClick={() => { setIsForgotPassword(false); setResetSent(false); }} className="px-6 py-2.5 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest">Back to Login</button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-[11px] font-bold text-black/50 leading-relaxed">Enter your email and we'll send you a reset link.</p>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={e => setResetEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full bg-white/40 border border-white/60 rounded-2xl py-3.5 px-5 text-black placeholder:text-black/20 outline-none focus:bg-white focus:border-black/10 transition-all text-sm font-bold"
+                />
+                {error && <p className="text-rose-600 text-[9px] font-black uppercase tracking-widest">{error}</p>}
+                <button
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading || !resetEmail.trim()}
+                  className="w-full py-3 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50 transition-all active:scale-95"
+                >
+                  {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Legal document modals */}
       {openLegal && <LegalModal doc={openLegal} onClose={() => setOpenLegal(null)} />}

@@ -10,12 +10,15 @@ interface TradeLogProps {
   onEdit: (trade: Trade) => void;
   onDelete: (id: string) => void;
   displayUnit: PerformanceUnit;
+  startingEquity?: number;
 }
 
-const TradeLog: React.FC<TradeLogProps> = ({ trades, onEdit, onDelete, displayUnit }) => {
+const TradeLog: React.FC<TradeLogProps> = ({ trades, onEdit, onDelete, displayUnit, startingEquity = 10000 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [resultFilter, setResultFilter] = useState<'ALL' | 'WIN' | 'LOSS' | 'BE'>('ALL');
 
   const randomQuote = useMemo(() => TRADER_QUOTES[Math.floor(Math.random() * TRADER_QUOTES.length)], []);
 
@@ -43,8 +46,20 @@ const TradeLog: React.FC<TradeLogProps> = ({ trades, onEdit, onDelete, displayUn
     if (selectedTag) {
       result = result.filter(t => t.tags?.map(tag => tag.trim()).includes(selectedTag));
     }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(t =>
+        t.symbol?.toLowerCase().includes(q) ||
+        t.narrative?.toLowerCase().includes(q) ||
+        t.plan?.toLowerCase().includes(q) ||
+        t.tags?.some(tag => tag.toLowerCase().includes(q))
+      );
+    }
+    if (resultFilter !== 'ALL') {
+      result = result.filter(t => t.result === resultFilter);
+    }
     return result;
-  }, [trades, selectedTag]);
+  }, [trades, selectedTag, searchQuery, resultFilter]);
 
   const getImageUrl = (link: string) => {
     if (!link || typeof link !== 'string') return '';
@@ -69,7 +84,7 @@ const TradeLog: React.FC<TradeLogProps> = ({ trades, onEdit, onDelete, displayUn
   const formatPnL = (trade: Trade) => {
     switch (displayUnit) {
       case 'PERCENT':
-        return `${trade.pnl >= 0 ? '+' : ''}${((trade.pnl / 10000) * 100).toFixed(2)}%`; 
+        return `${trade.pnl >= 0 ? '+' : ''}${((trade.pnl / (startingEquity || 10000)) * 100).toFixed(2)}%`; 
       case 'R_MULTIPLE':
         return `${trade.rr}R`;
       case 'TICKS':
@@ -99,22 +114,56 @@ const TradeLog: React.FC<TradeLogProps> = ({ trades, onEdit, onDelete, displayUn
 
       {/* Filter Section */}
       <div className="space-y-3 sm:space-y-4 px-1">
+        {/* Search bar */}
+        <div className="relative px-2">
+          <svg className="absolute left-5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-black/25 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search symbol, notes, tags..."
+            className="w-full bg-white/50 border border-white/70 rounded-2xl py-2.5 pl-9 pr-4 text-[12px] font-bold text-black placeholder:text-black/25 outline-none focus:bg-white focus:border-black/10 transition-all"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full bg-black/10 text-black/40 hover:bg-black/20 transition-all">
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          )}
+        </div>
+
+        {/* Result filter chips */}
+        <div className="flex items-center gap-2 px-2 overflow-x-auto no-scrollbar">
+          {(['ALL', 'WIN', 'LOSS', 'BE'] as const).map(r => (
+            <button key={r} onClick={() => setResultFilter(r)}
+              className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap border shrink-0 ${
+                resultFilter === r
+                  ? r === 'WIN' ? 'bg-emerald-500 text-white border-emerald-500'
+                    : r === 'LOSS' ? 'bg-rose-500 text-white border-rose-500'
+                    : r === 'BE' ? 'bg-amber-400 text-black border-amber-400'
+                    : 'bg-black text-white border-black'
+                  : 'bg-white/40 text-black/40 border-white/60 hover:bg-white/70'
+              }`}
+            >
+              {r === 'ALL' ? `All (${trades.length})` : r}
+            </button>
+          ))}
+          <div className="flex-1" />
+          <button 
+            onClick={() => exportToCSV(trades)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-black/[0.04] hover:bg-black hover:text-white rounded-full text-[8px] font-black uppercase tracking-widest transition-all border border-black/5 shrink-0"
+          >
+            <ICONS.Export className="w-3 h-3" />
+            Export
+          </button>
+        </div>
+
         <div className="flex items-center justify-between px-2">
           <h3 className="text-[9px] sm:text-[10px] font-black text-black/20 uppercase tracking-[0.3em] flex items-center gap-2">
-            <div className="w-1 h-3 bg-black/20 rounded-full" /> Narrative Scopes
+            <div className="w-1 h-3 bg-black/20 rounded-full" /> Tags
           </h3>
-          <div className="flex items-center gap-4">
-            <p className="hidden sm:block text-[8px] font-black text-black/30 uppercase tracking-widest">
-              {filteredSortedTrades.length} Hits
-            </p>
-            <button 
-              onClick={() => exportToCSV(trades)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-black/[0.03] hover:bg-black hover:text-white rounded-full text-[8px] font-black uppercase tracking-widest transition-all border border-black/5"
-            >
-              <ICONS.Export className="w-3 h-3" />
-              Export Library
-            </button>
-          </div>
+          <p className="text-[8px] font-black text-black/30 uppercase tracking-widest">{filteredSortedTrades.length} Results</p>
         </div>
         
         <div className="relative">

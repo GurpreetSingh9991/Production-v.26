@@ -42,6 +42,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
   const [showMistakes, setShowMistakes] = useState(false);
   const [showPsychology, setShowPsychology] = useState(false);
   const [isAdvanced, setIsAdvanced] = useState(false);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
   
   // Pip/Tick value for Forex/CFD/Futures
   const [pipValue, setPipValue] = useState(10); // $ per pip per lot (default: EURUSD standard lot)
@@ -400,10 +401,14 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
     }
 
     if (errors.length > 0) {
-      alert('Please fix the following before saving:\n\n• ' + errors.join('\n• '));
+      setFormErrors(errors);
+      // Scroll to top of form to show errors
+      const form = document.querySelector('.trade-form-scroll');
+      if (form) form.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
+    setFormErrors([]);
     onSave(formData as Trade);
   };
 
@@ -447,16 +452,29 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 custom-scrollbar">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 custom-scrollbar trade-form-scroll">
+
+          {/* Inline validation errors */}
+          {formErrors.length > 0 && (
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 space-y-1.5 animate-in slide-in-from-top-2 duration-300">
+              <p className="text-[9px] font-black uppercase tracking-widest text-rose-600 mb-2">Fix before saving</p>
+              {formErrors.map((err, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-rose-400 shrink-0" />
+                  <p className="text-[11px] font-bold text-rose-700">{err}</p>
+                </div>
+              ))}
+            </div>
+          )}
           
           <div className="space-y-4">
             <h3 className="text-[10px] font-black text-black/60 uppercase tracking-[0.3em] flex items-center gap-2">
               <div className="w-1 h-3 bg-black/40 rounded-full" /> Session Context
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div className="space-y-1.5">
                 <label className="block text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Account</label>
-                <select name="accountId" value={formData.accountId} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-black outline-none h-[48px] focus:ring-2 focus:ring-black/5 text-black">
+                <select name="accountId" value={formData.accountId} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-black outline-none h-[48px] focus:ring-2 focus:ring-black/5 text-black appearance-none">
                   {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                 </select>
               </div>
@@ -468,7 +486,8 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSave, onCancel, initialData, ac
                   value={formData.date || ''}
                   max={new Date().toISOString().split('T')[0]}
                   onChange={handleChange}
-                  className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[11px] font-black outline-none h-[48px] focus:ring-2 focus:ring-black/5 text-black"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-black outline-none h-[48px] focus:ring-2 focus:ring-black/5 text-black"
+                  style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
                 />
               </div>
               <div className="space-y-1.5">
