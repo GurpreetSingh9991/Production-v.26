@@ -128,18 +128,24 @@ const Dashboard: React.FC<DashboardProps> = ({ trades, activeAccount, accounts, 
     if (dateRange === 'ALL') return trades;
     
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    // Use noon to avoid any timezone edge cases
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     
     return trades.filter(t => {
-      const tradeDate = new Date(t.date + 'T12:00:00').getTime();
+      // Normalize date — strips any time component Supabase might include
+      const dateStr = String(t.date).split('T')[0];
+      const tradeDate = new Date(dateStr + 'T12:00:00').getTime();
       
       switch (dateRange) {
-        case 'TODAY':
-          return tradeDate === today;
+        case 'TODAY': {
+          // Compare date strings directly to avoid midnight-vs-noon timestamp mismatch
+          const todayStr = new Date().toISOString().split('T')[0];
+          return String(t.date).split('T')[0] === todayStr;
+        }
         case '7D':
-          return tradeDate >= today - (7 * 24 * 60 * 60 * 1000);
+          return tradeDate >= todayMidnight - (7 * 24 * 60 * 60 * 1000);
         case '30D':
-          return tradeDate >= today - (30 * 24 * 60 * 60 * 1000);
+          return tradeDate >= todayMidnight - (30 * 24 * 60 * 60 * 1000);
         case 'MTD':
           return new Date(tradeDate).getMonth() === now.getMonth() && new Date(tradeDate).getFullYear() === now.getFullYear();
         case 'YTD':

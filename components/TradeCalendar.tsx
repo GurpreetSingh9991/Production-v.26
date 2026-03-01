@@ -15,10 +15,14 @@ const TradeCalendar: React.FC<TradeCalendarProps> = ({ trades, renderTradeDetail
 
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // Normalize date to YYYY-MM-DD — guards against Supabase returning full datetime strings
+  const normalizeDate = (d: string) => (d ? String(d).split('T')[0].trim() : d);
+
   const tradesByDate = useMemo(() => {
     return trades.reduce((acc, trade) => {
-      acc[trade.date] = acc[trade.date] || [];
-      acc[trade.date].push(trade);
+      const key = normalizeDate(trade.date);
+      acc[key] = acc[key] || [];
+      acc[key].push(trade);
       return acc;
     }, {} as Record<string, Trade[]>);
   }, [trades]);

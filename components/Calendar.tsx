@@ -18,10 +18,14 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
 
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // Normalize date to YYYY-MM-DD — guards against Supabase returning full datetime strings
+  const normalizeDate = (d: string) => (d ? String(d).split('T')[0].trim() : d);
+
   const tradesByDate = useMemo(() => {
     return trades.reduce((acc, trade) => {
-      acc[trade.date] = acc[trade.date] || [];
-      acc[trade.date].push(trade);
+      const key = normalizeDate(trade.date);
+      acc[key] = acc[key] || [];
+      acc[key].push(trade);
       return acc;
     }, {} as Record<string, Trade[]>);
   }, [trades]);
@@ -30,7 +34,8 @@ const Calendar: React.FC<CalendarProps> = ({ trades, displayUnit, startingEquity
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     return trades.filter(t => {
-      const d = new Date(t.date + 'T12:00:00');
+      const dateStr = String(t.date).split('T')[0];
+      const d = new Date(dateStr + 'T12:00:00');
       return d.getFullYear() === year && d.getMonth() === month;
     });
   }, [trades, currentDate]);

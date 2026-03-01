@@ -20,11 +20,29 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [openLegal, setOpenLegal] = useState<LegalDoc | null>(null);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryDone, setRecoveryDone] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
 
   const client = getSupabaseClient();
+
+  // Detect Supabase password recovery redirect — URL will contain #access_token=...&type=recovery
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      setIsPasswordRecovery(true);
+    }
+    // Also handle new PKCE flow: ?token_hash=...&type=recovery
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('type') === 'recovery') {
+      setIsPasswordRecovery(true);
+    }
+  }, []);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -53,6 +71,31 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
       setError(err.message || 'Failed to send reset email.');
     } finally {
       setResetLoading(false);
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== newPasswordConfirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setRecoveryLoading(true);
+    setError(null);
+    try {
+      const supabase = getSupabaseClient();
+      const { error: updateErr } = await supabase!.auth.updateUser({ password: newPassword });
+      if (updateErr) throw updateErr;
+      setRecoveryDone(true);
+      // Clear the hash from URL so refreshing doesn't re-trigger
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update password.');
+    } finally {
+      setRecoveryLoading(false);
     }
   };
 
@@ -129,6 +172,51 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
               <ICONS.ToggleRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Password Recovery Screen ─────────────────────────────────────────────
+  if (isPasswordRecovery) {
+    return (
+      <div className="min-h-screen bg-[#D6D6D6] flex items-center justify-center p-6 pt-safe pb-safe selection:bg-black/10">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-black/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="w-full max-w-md apple-glass rounded-[3.5rem] p-10 md:p-14 ambient-shadow relative overflow-hidden animate-in zoom-in-95 duration-700 border-white/40 text-center">
+          {recoveryDone ? (
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-[1.5rem] flex items-center justify-center">
+                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <h2 className="text-2xl font-black tracking-tighter text-black">Password Updated!</h2>
+              <p className="text-[10px] font-bold text-black/40 uppercase tracking-[0.2em]">Your new password has been saved. You can now log in.</p>
+              <button onClick={() => { setIsPasswordRecovery(false); setRecoveryDone(false); setIsLogin(true); }}
+                className="group flex items-center bg-black rounded-full p-1 pr-2 pl-6 transition-all duration-500 shadow-2xl active:scale-95 mx-auto">
+                <span className="text-white text-[10px] font-black uppercase tracking-[0.2em] mr-4">Go to Login</span>
+                <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center text-white">
+                  <ICONS.ToggleRight className="w-4 h-4" />
+                </div>
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center shadow-xl">
+                <ICONS.Logo className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tighter text-black mb-2">Set New Password</h2>
+                <p className="text-[10px] font-bold text-black/40 uppercase tracking-[0.2em]">Choose a strong password for your account</p>
+              </div>
+              <div className="w-full space-y-3">
+                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="new password" className="w-full bg-white/40 border border-white/60 rounded-2xl py-3.5 px-6 text-black placeholder:text-black/20 outline-none focus:bg-white focus:border-black/10 transition-all text-sm font-bold tracking-tight" />
+                <input type="password" value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} placeholder="confirm password" className="w-full bg-white/40 border border-white/60 rounded-2xl py-3.5 px-6 text-black placeholder:text-black/20 outline-none focus:bg-white focus:border-black/10 transition-all text-sm font-bold tracking-tight" />
+                {error && <div className="bg-rose-500/10 border border-rose-500/20 py-2.5 px-6 rounded-xl"><p className="text-rose-600 text-[9px] font-black uppercase tracking-widest">{error}</p></div>}
+                <button onClick={handlePasswordUpdate} disabled={recoveryLoading} className="w-full py-3.5 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all disabled:opacity-50">
+                  {recoveryLoading ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
